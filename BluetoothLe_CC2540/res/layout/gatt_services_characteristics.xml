@@ -28,11 +28,20 @@
                   android:textSize="18sp"/>
         <Space android:layout_width="5dp"
                android:layout_height="wrap_content"/>
-        <TextView android:id="@+id/device_address"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="18sp"/>
+
+        <TextView
+            android:id="@+id/device_address"
+            android:layout_width="352dp"
+            android:layout_height="wrap_content"
+            android:textSize="18sp" />
+
     </LinearLayout>
+
+    <Spinner
+        android:id="@+id/spinner1"
+        android:layout_width="225dp"
+        android:layout_height="44dp" />
+
     <LinearLayout android:orientation="horizontal"
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
@@ -43,11 +52,14 @@
                   android:textSize="18sp"/>
         <Space android:layout_width="5dp"
                android:layout_height="wrap_content"/>
-        <TextView android:id="@+id/connection_state"
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:text="@string/disconnected"
-                  android:textSize="18sp"/>
+
+        <TextView
+            android:id="@+id/connection_state"
+            android:layout_width="451dp"
+            android:layout_height="wrap_content"
+            android:text="@string/disconnected"
+            android:textSize="18sp" />
+
     </LinearLayout>
    
         <TextView android:layout_width="wrap_content"
@@ -72,11 +84,6 @@
                   android:textSize="18sp"/>
         <Space    android:layout_width="5dp"
                   android:layout_height="wrap_content"/>
-
-        <Spinner
-            android:id="@+id/spinner1"
-            android:layout_width="225dp"
-            android:layout_height="44dp" />
 
         <EditText android:id="@+id/edittext_input_value"
                   android:layout_width="match_parent"
