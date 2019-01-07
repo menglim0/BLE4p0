@@ -84,16 +84,18 @@ public class DeviceControlActivity extends Activity {
    private ArrayAdapter<String> adapter;//创建一个数组适配器
    byte[] Command_in ={0x30,0x31,0x33,0x34};
    byte[][] SendData = {{0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x3E,(byte)0x80,0x00,0x00,0x00,0x00,0x00},
+					    {0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x10,0x03,0x00,0x00,0x00,0x00,0x00},
 					    {0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x27,0x09,0x00,0x00,0x00,0x00,0x00},
-					    {0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x30,0x31,0x33,0x34,0x30,0x31,0x33,0x10},
-					    {0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x30,0x31,0x33,0x34,0x30,0x31,0x33,0x10},
-					    {0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x30,0x31,0x33,0x34,0x30,0x31,0x33,0x0a}
+					    {0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x10,0x0E,0x27,0x0A,0x20,0x20,0x20,0x20},
+					    {0x10,(byte)0xDB,(byte)0xFE,(byte)0xF1,0x04,0x14,(byte)0xFF,(byte)0xFF,(byte)0xFF,0x00,0x00,0x00}
 					    };
-   String[] SendData_Display={"0x30,0x31,0x33,0x34,0x30,0x31,0x33,0x34,0x30,0x31,0x33,0x10",
-		   						"0x38,0x39,0x40,0x34,0x30,0x31,0x33,0x34,0x30,0x31,0x33,0x10",
-		   						"0x41,0x42,0x33,0x34,0x30,0x31,0x33,0x34,0x30,0x31,0x33,0x10",
-		   						"0x51,0x52,0x33,0x34,0x30,0x31,0x33,0x34,0x30,0x31,0x33,0x10"};
+   String[] SendData_Display=  {"0x14DAE1F1 0x02,0x3E,0x80,0x00,0x00,0x00,0x00,0x00",
+		   						"0x14DAE1F1 0x02,0x10,0x03,0x00,0x00,0x00,0x00,0x00",
+		   						"0x14DAE1F1 0x02,0x27,0x09,0x00,0x00,0x00,0x00,0x00",
+		   						"0x14DAE1F1 0x10,0x0E,0x27,0x0A,0x20,0x20,0x20,0x20",
+		   						"0x10DBFEF1 0x04,0x14,0xFF,0xFF,0xFF,0x00,0x00,0x00"};
    int Spin_index;
+   int received_data;
 
     
     /***********end of Add Spinner*******************/
@@ -149,10 +151,11 @@ public class DeviceControlActivity extends Activity {
             } 
             //显示数据
             else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
-            	//将数据显示在mDataField上
+            	//将数据显示在mDataField上            	
             	String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
             	System.out.println("data----" + data);
                 displayData(data);
+ 
             }
         }
     };    
@@ -226,6 +229,8 @@ public class DeviceControlActivity extends Activity {
 			
 			@Override
 			public void onClick(View v) {
+				
+				final boolean action_state;
 				read();
 				
                 final int charaProp = characteristic.getProperties();
@@ -253,7 +258,17 @@ public class DeviceControlActivity extends Activity {
                     	//characteristic.setValue(value[0],BluetoothGattCharacteristic.FORMAT_UINT8, 0);
                         characteristic.setValue(SendData[Spin_index]);
                     	//characteristic.setValue(WriteBytes);
+                        //action_state = 
                         mBluetoothLeService.writeCharacteristic(characteristic);
+                      
+                        /*Try to send twice for test*/
+                        //while(!mBluetoothLeService.GATT_SUCCESS)
+                       // int delay_Cnt;
+                       // for(delay_Cnt=0;delay_Cnt<1000;delay_Cnt++);
+                        //characteristic.setValue(SendData[Spin_index+1]);
+                    	//characteristic.setValue(WriteBytes);
+                        //mBluetoothLeService.writeCharacteristic(characteristic);
+                        
                         Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -358,5 +373,15 @@ public class DeviceControlActivity extends Activity {
         intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
         return intentFilter;
     }
+    /*
+    private void delay(int ms){
+		try {
+            Thread.currentThread();
+			Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } 
+	 }
+*/
 }
 

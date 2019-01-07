@@ -14,7 +14,7 @@
      limitations under the License.
 -->
 <resources>
-    <string name="app_name">BLE Sample</string>
+    <string name="app_name">CAN_OBD</string>
     <string name="ble_not_supported">BLE is not supported</string>
     <string name="label_data">Data:</string>
     <string name="label_device_address">Device address:</string>
@@ -36,10 +36,11 @@
     <string name="menu_stop">Stop</string>
     
         <string-array name="spinnername">
-        <item>UDS_Service_1</item>
-        <item>UDS_Service_2 </item>
-        <item>UDS_Service_3</item>
-        <item>UDS_Service_4</item>
+        <item>3E_Test_Present</item>
+        <item>ExtDiagSession </item>
+        <item>RequestSeed</item>
+        <item>SendKey</item>
+        <item>ClearAllDTC</item>
     </string-array>
     
 </resources>
