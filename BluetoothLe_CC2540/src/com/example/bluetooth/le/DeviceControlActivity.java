@@ -64,6 +64,7 @@ public class DeviceControlActivity extends Activity {
     private byte SendComand;
     
     private Button button_send_value ; // 发送按钮
+    private Button button_start ; // 开始按钮
     private EditText edittext_input_value ; // 数据在这里输入
     
     private BluetoothLeService mBluetoothLeService;
@@ -89,6 +90,10 @@ public class DeviceControlActivity extends Activity {
 					    {0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x10,0x0E,0x27,0x0A,0x20,0x20,0x20,0x20},
 					    {0x10,(byte)0xDB,(byte)0xFE,(byte)0xF1,0x04,0x14,(byte)0xFF,(byte)0xFF,(byte)0xFF,0x00,0x00,0x00}
 					    };
+   
+   byte[] StartCmd = {0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x3E,(byte)0x80,(byte)0xF0,0x00,0x00,0x00,0x00};
+   
+   
    String[] SendData_Display=  {"0x14DAE1F1 0x02,0x3E,0x80,0x00,0x00,0x00,0x00,0x00",
 		   						"0x14DAE1F1 0x02,0x10,0x03,0x00,0x00,0x00,0x00,0x00",
 		   						"0x14DAE1F1 0x02,0x27,0x09,0x00,0x00,0x00,0x00,0x00",
@@ -223,6 +228,8 @@ public class DeviceControlActivity extends Activity {
      								});
         
         button_send_value = (Button) findViewById(R.id.button_send_value);
+        button_start = (Button) findViewById(R.id.Start);
+        
         edittext_input_value = (EditText) findViewById(R.id.edittext_input_value);
         
         button_send_value.setOnClickListener(new View.OnClickListener() {
@@ -255,22 +262,43 @@ public class DeviceControlActivity extends Activity {
                     	
                     	//SendData[0]=SendData[Spin_index];
                     	WriteBytes = edittext_input_value.getText().toString().getBytes();
-                    	//characteristic.setValue(value[0],BluetoothGattCharacteristic.FORMAT_UINT8, 0);
                         characteristic.setValue(SendData[Spin_index]);
-                    	//characteristic.setValue(WriteBytes);
-                        //action_state = 
                         mBluetoothLeService.writeCharacteristic(characteristic);
-                      
-                        /*Try to send twice for test*/
-                        //while(!mBluetoothLeService.GATT_SUCCESS)
-                       // int delay_Cnt;
-                       // for(delay_Cnt=0;delay_Cnt<1000;delay_Cnt++);
-                        //characteristic.setValue(SendData[Spin_index+1]);
-                    	//characteristic.setValue(WriteBytes);
-                        //mBluetoothLeService.writeCharacteristic(characteristic);
                         
                         Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
                     }
+                }
+                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                    mNotifyCharacteristic = characteristic;
+                    mBluetoothLeService.setCharacteristicNotification(characteristic, true);
+                }
+                edittext_input_value.setText("");
+			}
+		});
+        
+        button_start.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				
+				final boolean action_state;
+				read();
+				
+                final int charaProp = characteristic.getProperties();
+                
+                //如果该char可写
+                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                    // If there is an active notification on a characteristic, clear
+                    // it first so it doesn't update the data field on the user interface.
+                    if (mNotifyCharacteristic != null) {
+                        mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
+                        mNotifyCharacteristic = null;
+                    }
+
+                        characteristic.setValue(StartCmd);
+                        mBluetoothLeService.writeCharacteristic(characteristic);
+                        Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
+             
                 }
                 if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
                     mNotifyCharacteristic = characteristic;
