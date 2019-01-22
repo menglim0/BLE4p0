@@ -34,6 +34,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -91,7 +92,7 @@ public class DeviceControlActivity extends Activity {
 					    {0x10,(byte)0xDB,(byte)0xFE,(byte)0xF1,0x04,0x14,(byte)0xFF,(byte)0xFF,(byte)0xFF,0x00,0x00,0x00}
 					    };
    
-   byte[] StartCmd = {0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x3E,(byte)0x80,(byte)0xF0,0x00,0x00,0x00,0x00};
+   byte[] StartCmd = {(byte)0xFF,(byte)0x01,(byte)0xE1,(byte)0xF1,0x02,0x3E,(byte)0x80,(byte)0xFF,0x00,0x00,0x00,0x00};
    
    
    String[] SendData_Display=  {"0x14DAE1F1 0x02,0x3E,0x80,0x00,0x00,0x00,0x00,0x00",
@@ -182,6 +183,9 @@ public class DeviceControlActivity extends Activity {
         ((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
         mConnectionState = (TextView) findViewById(R.id.connection_state);
         mDataField =  (EditText) findViewById(R.id.data_value);
+        
+        /*保持屏幕常亮*/
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         
         /* convert data*/
         //SendData_Display[0][0] = (String) SendData[0][0];
