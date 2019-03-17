@@ -30,6 +30,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -37,6 +38,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 /*******Add Spinner***/
@@ -58,6 +60,8 @@ public class DeviceControlActivity extends Activity {
 
     //连接状态
     private TextView mConnectionState;
+    private TextView mLogInfor;
+    private ScrollView mscrollView;
     private EditText mDataField;
     private String mDeviceName;
     private String mDeviceAddress;
@@ -66,8 +70,9 @@ public class DeviceControlActivity extends Activity {
     
     private Button button_send_value ; // 发送按钮
     private Button button_start ; // 开始按钮
+    private Button button_CAN_config ; // CAN init button
     private EditText edittext_input_value ; // 数据在这里输入
-    
+    private EditText edittext_CAN_Config ; // 数据在这里输入
     private BluetoothLeService mBluetoothLeService;
   
     private boolean mConnected = false;
@@ -82,25 +87,46 @@ public class DeviceControlActivity extends Activity {
     private BluetoothGattService readMnotyGattService;
     byte[] WriteBytes = new byte[20];
     
+    int[] data_String2Int= new int[14];
+    
+    byte[] data_String2Byte = new byte[4];
+    
     /*******Add Spinner***/
    private ArrayAdapter<String> adapter;//创建一个数组适配器
    byte[] Command_in ={0x30,0x31,0x33,0x34};
-   byte[][] SendData = {{0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x3E,(byte)0x80,0x00,0x00,0x00,0x00,0x00},
-					    {0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x10,0x03,0x00,0x00,0x00,0x00,0x00},
-					    {0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x27,0x09,0x00,0x00,0x00,0x00,0x00},
-					    {0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x10,0x0E,0x27,0x0A,0x20,0x20,0x20,0x20},
-					    {0x10,(byte)0xDB,(byte)0xFE,(byte)0xF1,0x04,0x14,(byte)0xFF,(byte)0xFF,(byte)0xFF,0x00,0x00,0x00}
+   byte[][] SendData = {{0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x3E,(byte)0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+					    {0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x10,0x03,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+					    {0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x27,0x09,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+					    {0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x10,0x0E,0x27,0x0A,0x20,0x20,0x20,0x20,0x00,0x00},
+					    {0x10,(byte)0xDB,(byte)0xFE,(byte)0xF1,0x04,0x14,(byte)0xFF,(byte)0xFF,(byte)0xFF,0x00,0x00,0x00,0x00,0x00}
 					    };
    
-   byte[] StartCmd = {(byte)0xFF,(byte)0x01,(byte)0xE1,(byte)0xF1,0x02,0x3E,(byte)0x80,(byte)0xFF,0x00,0x00,0x00,0x00};
+   byte[] StartCmd = {(byte)0xFF,(byte)0x01,(byte)0xE1,(byte)0xF1,0x02,0x3E,(byte)0x80,(byte)0xFF,0x00,0x00,0x00,0x00,0x00,0x00};
    
+   byte[] CAN_init_Cmd = {(byte)0xAA,(byte)0x01,(byte)0x00,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   
+   byte[][] SendCAN_Config = {{(byte)0xAA,(byte)0x01,(byte)0x01,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+							    {(byte)0xAA,(byte)0x01,(byte)0x02,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+							    {(byte)0xAA,(byte)0x01,(byte)0x03,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+							    {(byte)0xAA,(byte)0x01,(byte)0x04,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+							    {(byte)0xAA,(byte)0x01,(byte)0x05,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00}
+							    };
    
    String[] SendData_Display=  {"0x14DAE1F1 0x02,0x3E,0x80,0x00,0x00,0x00,0x00,0x00",
 		   						"0x14DAE1F1 0x02,0x10,0x03,0x00,0x00,0x00,0x00,0x00",
 		   						"0x14DAE1F1 0x02,0x27,0x09,0x00,0x00,0x00,0x00,0x00",
 		   						"0x14DAE1F1 0x10,0x0E,0x27,0x0A,0x20,0x20,0x20,0x20",
 		   						"0x10DBFEF1 0x04,0x14,0xFF,0xFF,0xFF,0x00,0x00,0x00"};
-   int Spin_index;
+   
+   String[] SendData_CAN_Config=  {"CAN 33.3K",
+									"CAN 500K",
+									"CANFD 500K/2M",
+									"CANFD 500K/5M",
+									"CANFD 500K/5M"};
+   
+   //String[] loginfo;
+   
+   int Spin_index,Spin_CAN_index;
    int received_data;
 
     
@@ -160,6 +186,26 @@ public class DeviceControlActivity extends Activity {
             	//将数据显示在mDataField上            	
             	String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
             	System.out.println("data----" + data);
+            	
+            	char[] data_string2char;            	
+            	byte[] data_Char2byte={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+            	int[] data_String2Int_local={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+            	
+            	int data_char_length,length_loop_i;
+            	data_string2char = data.toCharArray();
+            	data_char_length = data_string2char.length;
+            	for(length_loop_i=0;length_loop_i<data_char_length;length_loop_i++)
+            	{
+            		data_String2Int_local[length_loop_i]=data_string2char[length_loop_i];
+            		data_Char2byte[length_loop_i]=(byte) data_string2char[length_loop_i];
+            	}
+            	//data_String2Int[0]=data_string2char[0];
+            	//data_String2Int[1]=data_string2char[1];
+            	//data_String2Int[1]=Integer.parseInt(data);
+            	//data_String2Byte[0]=(byte) Integer.parseInt(data.substring(0,1));
+            	//data_String2Byte[1]=(byte) Integer.parseInt(data.substring(1,2));
+            	//data_String2Byte[2]=(byte) Integer.parseInt(data.substring(2,3));
+            	//data_String2Byte[3]=(byte) Integer.parseInt(data.substring(3,4));
                 displayData(data);
  
             }
@@ -182,6 +228,12 @@ public class DeviceControlActivity extends Activity {
         // Sets up UI references.
         ((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
         mConnectionState = (TextView) findViewById(R.id.connection_state);
+        mLogInfor = (TextView) findViewById(R.id.textView3);
+        
+        
+        mLogInfor.setMovementMethod(ScrollingMovementMethod.getInstance());
+        
+        mscrollView= (ScrollView) findViewById(R.id.scrollView1);
         mDataField =  (EditText) findViewById(R.id.data_value);
         
         /*保持屏幕常亮*/
@@ -198,6 +250,8 @@ public class DeviceControlActivity extends Activity {
      	final ArrayAdapter<String> adapter=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item, mItems);
      	//绑定 Adapter到控件
      	mSpinner.setAdapter(adapter);
+     	
+
      	//4.为下拉列表设置各种点击事件，以响应菜单中的文本item被选中了，用setOnItemSelectedListener   
      			mSpinner.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {//选择item的选择点击监听事件
      															@Override
@@ -230,11 +284,57 @@ public class DeviceControlActivity extends Activity {
 
 
      								});
+   
+ 
+ 	/*******Add Spinner***/
+    final Spinner mSpinner_CAN_Config = (Spinner) findViewById(R.id.spinner2); 
+	// 建立数据源
+	final String[] mItems_CAN_Config = getResources().getStringArray(R.array.spinnername2);
+ // 建立Adapter并且绑定数据源
+ 	final ArrayAdapter<String> adapter_CAN_Config=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item, mItems_CAN_Config);
+ 	//绑定 Adapter到控件
+ 	mSpinner_CAN_Config.setAdapter(adapter_CAN_Config);
+ 	//4.为下拉列表设置各种点击事件，以响应菜单中的文本item被选中了，用setOnItemSelectedListener   
+ 	mSpinner_CAN_Config.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {//选择item的选择点击监听事件
+														@Override
+							public void onItemSelected(AdapterView<?> arg0,
+									View arg1, int arg2, long arg3) {
+															
+							try {
+								//以下三行代码是解决问题所在
+								/*返回到包含spinner的activity中，再次点击相同的item无法实现跳转操作。研究了半天才发现原因，
+								Android spinner本身记住了上一次选择的项，再次点击相同的项是不会触发onitemselected事件的。*/
+								Field field = AdapterView.class.getDeclaredField("mOldSelectedPosition");
+								field.setAccessible(true);	//设置mOldSelectedPosition可访问
+								field.setInt(mSpinner_CAN_Config, AdapterView.INVALID_POSITION); //设置mOldSelectedPosition的值
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+
+										
+								// TODO Auto-generated method stub
+							    // 将所选mySpinner 的值带入myTextView 中      						
+							edittext_CAN_Config.setText(SendData_CAN_Config[arg2]);//文本说明
+							Spin_CAN_index= arg2;
+						}
+
+							@Override
+							public void onNothingSelected(AdapterView<?> arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+
+							});
+ 	
         
         button_send_value = (Button) findViewById(R.id.button_send_value);
         button_start = (Button) findViewById(R.id.Start);
+        button_CAN_config = (Button) findViewById(R.id.CAN_config);
         
         edittext_input_value = (EditText) findViewById(R.id.edittext_input_value);
+        edittext_CAN_Config = (EditText) findViewById(R.id.editText1);
+        
         
         button_send_value.setOnClickListener(new View.OnClickListener() {
 			
@@ -312,11 +412,49 @@ public class DeviceControlActivity extends Activity {
 			}
 		});
        
+        
+button_CAN_config.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				
+				final boolean action_state;
+				read();
+				
+                final int charaProp = characteristic.getProperties();
+                
+                //如果该char可写
+                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                    // If there is an active notification on a characteristic, clear
+                    // it first so it doesn't update the data field on the user interface.
+                    if (mNotifyCharacteristic != null) {
+                        mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
+                        mNotifyCharacteristic = null;
+                    }
+
+                        characteristic.setValue(SendCAN_Config[Spin_CAN_index]);
+                        mBluetoothLeService.writeCharacteristic(characteristic);
+                        Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
+             
+                }
+                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                    mNotifyCharacteristic = characteristic;
+                    mBluetoothLeService.setCharacteristicNotification(characteristic, true);
+                }
+                edittext_input_value.setText("");
+			}
+		});
+        
+        
+        
+        
         getActionBar().setTitle(mDeviceName);
         getActionBar().setDisplayHomeAsUpEnabled(true);
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
     }
+    
+    
 
     /*
 	 * **************************************************************
@@ -393,8 +531,20 @@ public class DeviceControlActivity extends Activity {
 
     private void displayData(String data) {
         if (data != null) {
-            mDataField.setText(data);
-        }
+        	mLogInfor.append(data+"\n");
+        	//mscrollView.fullScroll(ScrollView.FOCUS_DOWN);
+        	mscrollView.post(new Runnable() {
+            	public void run() {
+            		mscrollView.fullScroll(ScrollView.FOCUS_DOWN);
+            		}
+    });
+
+           // loginfo[0]=data;
+           // loginfo[1]=data;
+           // loginfo[2]=data;
+            //mDataField.setText( loginfo[0]+loginfo[1]+loginfo[2]);
+            //mLogInfor.setText("\n");
+    }
     }
 
     private static IntentFilter makeGattUpdateIntentFilter() {
