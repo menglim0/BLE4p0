@@ -25,6 +25,7 @@ import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -32,6 +33,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -41,6 +43,8 @@ import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.app.AlertDialog; 
+import android.app.Dialog;
 /*******Add Spinner***/
 import android.widget.Spinner;
 import android.widget.AdapterView;
@@ -60,7 +64,9 @@ public class DeviceControlActivity extends Activity {
 
     //连接状态
     private TextView mConnectionState;
-    private TextView mLogInfor;
+    private TextView mLogInfor;    
+    private TextView editT_DisplaySignalValue;
+    
     private ScrollView mscrollView;
     private EditText mDataField;
     private String mDeviceName;
@@ -88,6 +94,9 @@ public class DeviceControlActivity extends Activity {
     byte[] WriteBytes = new byte[20];
     
     int[] data_String2Int= new int[14];
+    
+    int receiveID_Int=0;               
+    
     
     byte[] data_String2Byte = new byte[4];
     
@@ -124,10 +133,30 @@ public class DeviceControlActivity extends Activity {
 									"CANFD 500K/5M",
 									"CANFD 500K/5M"};
    
+   String[] SendData_CANFD_Config=  {"CAN 500K",
+										"CANFD 2M",
+										"CANFD 5M",
+										};
+   
+  
+   String signal_ReceiveID;
+   String signal_StartBit;
+   String signal_SigLength;
+   String signal_reslouation;
+   String signal_Offset;
+   String signal_Name;
+ 
+   
    //String[] loginfo;
    
    int Spin_index,Spin_CAN_index;
-   int received_data;
+   int received_ID;
+   int received_StartBit;
+   int received_SigLength;
+   double received_reslouation;
+   int received_Offset;
+  
+   
 
     
     /***********end of Add Spinner*******************/
@@ -162,6 +191,9 @@ public class DeviceControlActivity extends Activity {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
+            
+            //final TextView editT_DisplaySignalValue = (TextView) findViewById(R.id.textView5);
+            
             if (BluetoothLeService.ACTION_GATT_CONNECTED.equals(action)) {
                 mConnected = true;
                 updateConnectionState(R.string.connected);
@@ -185,20 +217,59 @@ public class DeviceControlActivity extends Activity {
             else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
             	//将数据显示在mDataField上            	
             	String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
+            	String display_Byte="";
             	System.out.println("data----" + data);
+            	
+            	int[] data_String2Int_222={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+            	int[] CAN_Data={0,0,0,0,0,0,0,0};
+            	int loop_str_index=0,data_strLength,temp=0;
             	
             	char[] data_string2char;            	
             	byte[] data_Char2byte={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
             	int[] data_String2Int_local={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
             	
             	int data_char_length,length_loop_i;
+            	data_strLength = data.length();
             	data_string2char = data.toCharArray();
+            	/*
+            	for(loop_str_index=0;loop_str_index<data_strLength;loop_str_index++)
+            	{
+            		temp=dataconvert.subBytes(data,loop_str_index,loop_str_index+2);
+            		data_String2Int_222[loop_str_index]=temp;
+            		loop_str_index++;
+            	}
+            	*/
+            
+
+            	//data_string2char = data.toCharArray();
             	data_char_length = data_string2char.length;
             	for(length_loop_i=0;length_loop_i<data_char_length;length_loop_i++)
             	{
             		data_String2Int_local[length_loop_i]=data_string2char[length_loop_i];
             		data_Char2byte[length_loop_i]=(byte) data_string2char[length_loop_i];
+            		if(length_loop_i>=6&&length_loop_i<14)
+            		{	
+            			CAN_Data[length_loop_i-6]=data_String2Int_local[length_loop_i];
+            			if(data_String2Int_local[length_loop_i]<16)
+            			{
+            			display_Byte= display_Byte +"0x0"+Integer.toHexString(data_String2Int_local[length_loop_i])+" ";
+            			}
+            			else
+            			{
+                			display_Byte= display_Byte +"0x"+Integer.toHexString(data_String2Int_local[length_loop_i])+" ";
+            			}	
+            			
+            		
+            		}
+         		
+
+            		data_String2Int_local[4] = data_String2Int_local[4] -40;
+            		editT_DisplaySignalValue.setText(String.valueOf(data_String2Int_local[4]));
             	}
+            	
+            	int CAN_ID=0;
+            	CAN_ID = (int)data_Char2byte[6]+ ((int)data_Char2byte[6])<<8;
+            	
             	//data_String2Int[0]=data_string2char[0];
             	//data_String2Int[1]=data_string2char[1];
             	//data_String2Int[1]=Integer.parseInt(data);
@@ -206,7 +277,7 @@ public class DeviceControlActivity extends Activity {
             	//data_String2Byte[1]=(byte) Integer.parseInt(data.substring(1,2));
             	//data_String2Byte[2]=(byte) Integer.parseInt(data.substring(2,3));
             	//data_String2Byte[3]=(byte) Integer.parseInt(data.substring(3,4));
-                displayData(data);
+                displayData(display_Byte);
  
             }
         }
@@ -229,12 +300,19 @@ public class DeviceControlActivity extends Activity {
         ((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
         mConnectionState = (TextView) findViewById(R.id.connection_state);
         mLogInfor = (TextView) findViewById(R.id.textView3);
+        editT_DisplaySignalValue = (TextView) findViewById(R.id.textView5);
         
         
         mLogInfor.setMovementMethod(ScrollingMovementMethod.getInstance());
         
         mscrollView= (ScrollView) findViewById(R.id.scrollView1);
         mDataField =  (EditText) findViewById(R.id.data_value);
+        
+       	//final EditText editT_DisplaySignalName = (EditText) findViewById(R.id.textView4);
+        
+        //private EditText editT_DisplaySignalName = (EditText) findViewById(R.id.textView4);
+        
+        
         
         /*保持屏幕常亮*/
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -329,7 +407,7 @@ public class DeviceControlActivity extends Activity {
  	
         
         button_send_value = (Button) findViewById(R.id.button_send_value);
-        button_start = (Button) findViewById(R.id.Start);
+        button_start = (Button) findViewById(R.id.Start_button);
         button_CAN_config = (Button) findViewById(R.id.CAN_config);
         
         edittext_input_value = (EditText) findViewById(R.id.edittext_input_value);
@@ -454,8 +532,99 @@ button_CAN_config.setOnClickListener(new View.OnClickListener() {
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
     }
     
-    
+    /*diaglog start*/
+    public void alert_edit(View view){
+    	LayoutInflater factory = LayoutInflater.from(this);
+    	
+    	final TextView editT_DisplaySignalName = (TextView) findViewById(R.id.textView4);
+    	//final TextView editT_DisplaySignaValue = (TextView) findViewById(R.id.textView5);
+    	
+        final View textEntryView = factory.inflate(R.layout.diag_layout, null); 
+        
+        final EditText editT_ReceiveID = (EditText) textEntryView.findViewById(R.id.editT_ReceiveID); 
+        final EditText editT_StartBit = (EditText)textEntryView.findViewById(R.id.editT_StartBit); 
+        final EditText editT_SigLength = (EditText) textEntryView.findViewById(R.id.editT_SigLength); 
+        final EditText editT_reslouation = (EditText)textEntryView.findViewById(R.id.editT_reslouation);         
+        final EditText editT_Offset = (EditText) textEntryView.findViewById(R.id.editT_Offset); 
+        final EditText EditT_SignalName = (EditText)textEntryView.findViewById(R.id.EditT_SignalName);
+        
+        AlertDialog.Builder ad1 = new AlertDialog.Builder(this); 
+        ad1.setTitle("信号定义:"); 
+        ad1.setIcon(android.R.drawable.ic_dialog_info); 
+        ad1.setView(textEntryView); 
+        ad1.setPositiveButton("是", new DialogInterface.OnClickListener() { 
+            public void onClick(DialogInterface dialog, int i) { 
+                   
+                Log.i("111111", editT_ReceiveID.getText().toString()); 
+                
+           /*receive the info from the alert diaglog*/
+                signal_ReceiveID=editT_ReceiveID.getText().toString();
+                signal_StartBit=editT_StartBit.getText().toString();
+                signal_SigLength=editT_SigLength.getText().toString();
+                signal_reslouation=editT_reslouation.getText().toString();                
+                signal_Offset=editT_Offset.getText().toString();
+                signal_Name = EditT_SignalName.getText().toString();
+                
+                
+                received_ID= dataconvert.DataStr2Integer(signal_ReceiveID); // convert the text to integer
+                 received_StartBit= dataconvert.DataStr2Decmial(signal_StartBit);
+                 received_SigLength= dataconvert.DataStr2Decmial(signal_SigLength);
+                 received_reslouation= dataconvert.DataStr2Double(signal_reslouation);// need floating type
+                 received_Offset= dataconvert.DataStr2Decmial(signal_Offset);
+               
+                
+				editT_DisplaySignalName.setText(signal_Name);
+                
+   
+            } 
+        }); 
+        ad1.setNegativeButton("否", new DialogInterface.OnClickListener() { 
+            public void onClick(DialogInterface dialog, int i) { 
+   
+            } 
+        }); 
+        ad1.show();// 显示对话框
 
+    }
+    /*diaglog end*/
+    
+  /*  
+    private int DataStr2Hex(String data) {
+    	
+    	int value=0,temp_Value2=0,temp_Value=0,char_length=0,loop_i=0;
+    	char[] string2char={0,0,0,0,0,0,0,0};
+    	byte[] signal_Char2byte={0,0,0,0,0,0,0,0};
+        if (data != null) {
+        	
+        	 char[] signal_string2char = data.toCharArray();
+             char_length = signal_string2char.length;
+             
+             for(loop_i=0;loop_i<char_length;loop_i++)
+             {        
+            	
+	             signal_Char2byte[loop_i]=(byte) signal_string2char[loop_i];
+	             if(signal_Char2byte[loop_i]>=48&&signal_Char2byte[loop_i]<=57)
+	             {
+	            	 temp_Value = signal_Char2byte[loop_i]-48;
+	             } 
+	             else if(signal_Char2byte[loop_i]>=97&&signal_Char2byte[loop_i]<=102)
+	             {temp_Value = signal_Char2byte[loop_i]-97+10;}
+	             else if(signal_Char2byte[loop_i]>=65&&signal_Char2byte[loop_i]<=70)
+	             {temp_Value = signal_Char2byte[loop_i]-65+10;}
+	             
+	             temp_Value2=temp_Value<<(4*(char_length-loop_i-1));
+	             
+	             value = value+ temp_Value2;
+	             
+	             }
+                            
+             	
+        	
+             
+            	}
+		return value;
+    }
+*/
     /*
 	 * **************************************************************
 	 * *****************************读函数*****************************
@@ -532,6 +701,7 @@ button_CAN_config.setOnClickListener(new View.OnClickListener() {
     private void displayData(String data) {
         if (data != null) {
         	mLogInfor.append(data+"\n");
+        	
         	//mscrollView.fullScroll(ScrollView.FOCUS_DOWN);
         	mscrollView.post(new Runnable() {
             	public void run() {
