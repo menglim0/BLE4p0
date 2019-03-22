@@ -2,6 +2,8 @@ package com.example.bluetooth.le;
 
 import  java.lang.String;
 
+import android.util.Log;
+
 
 public class dataconvert {
 	
@@ -89,11 +91,17 @@ public class dataconvert {
 	
 public static double DataStr2Double(String data) {
  
-    	double temp_Value3=0;
+    	double temp_Value3=1;
 
-        if (data != null) {        	
+        if ((data != "0")&&(data != null)) {        	
         	
         	temp_Value3 = Double.parseDouble(data);        	
+        }
+        else
+        {
+        	String resoluation=null;
+			Log.i(resoluation, "defalut resoluation =1");
+        	//Log.d(TAG, "defalut");
         }
 		return temp_Value3;
     }
@@ -144,6 +152,69 @@ public static int subBytes(String data,int point1,int point2) {
     return bs;
 }
 
+public static long DataStramp(byte[] data,int startbit, int length) {
+	
+	
+	byte[] signal_Char2byte={0,0,0,0,0,0,0,0};
+	int startbit_inLong,maxbyte,loop_i,startbit_Offset;
+	long CANData=0,value,CANData_mask=1;
+	int[] table ={56,57,58,59,60,61,62,63,
+			48,49,50,51,52,53,54,55,40,41,
+			42,43,44,45,46,47,32,33,34,35,
+			36,37,38,39,24,25,26,27,28,29,
+			30,31,16,17,18,19,20,21,22,23,
+			8,9,10,11,12,13,14,15,
+			0,1,2,3,4,5,6,7};
+   
+		startbit_inLong=table[startbit];
+		
+    	//string2char = data.toCharArray();
+       //  char_length = string2char.length;
+         
+         for(loop_i=6;loop_i<14;loop_i++)
+         {        
+        	 CANData=CANData<<8;
+        	 CANData =CANData+ (long) ((int)data[loop_i]&0xFF);       
+        }
+         //for(startbit_Offset=0;startbit_Offset<startbit_inLong;startbit_inLong++)
+         //{
+        	 CANData=CANData>>startbit_inLong;
+        // }
+        	 for(startbit_Offset=0;startbit_Offset<length-1;startbit_Offset++)
+        	 {
+        	 CANData_mask =CANData_mask<<1;
+        	 CANData_mask =CANData_mask|0x01; 
+        	 
+        	 }
+        	 value = CANData&CANData_mask;
+         
+         
+         //value = CANData;
+	return value;
+}
 
+public static String Data2Str(byte[] data) {
+	
+	int loop_i,DataHexStr_length_index,DataHexStr_length;
+	long CANData=0;
+	String value,DataHexStr;
+	         
+         for(loop_i=6;loop_i<14;loop_i++)
+         {        
+        	 CANData=CANData<<8;
+        	 CANData =CANData+ (long) ((int)data[loop_i]&0xFF);
+     
+        }
+         
+     	DataHexStr=Long.toHexString(CANData);
+    	DataHexStr_length = DataHexStr.length();
+        	
+    	for(DataHexStr_length_index=0;DataHexStr_length_index<16-DataHexStr_length;DataHexStr_length++)
+    	{
+    		DataHexStr="0"+DataHexStr;
+    	}
+         value = DataHexStr;
+	return value;
+}
 
 }

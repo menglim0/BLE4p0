@@ -31,8 +31,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:drawable/editbox_background"
-        android:inputType="number" 
-        android:text="8">
+        android:inputType="number" >
     </EditText>
 
     <TextView
@@ -46,8 +45,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:drawable/editbox_background"
-        android:inputType="number"
-        android:text="8" />
+        android:inputType="number" />
 
     <TextView
         android:id="@+id/textView3"
@@ -87,6 +85,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:drawable/editbox_background"
-        android:text="变速箱油温" />
+        android:text="other" />
 
 </LinearLayout>

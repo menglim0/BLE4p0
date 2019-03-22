@@ -42,7 +42,6 @@ public final class R {
         public static final int TextView01=0x7f09000a;
         public static final int TextView02=0x7f090011;
         public static final int TextView03=0x7f09000e;
-        public static final int TextView04=0x7f09001d;
         public static final int TextView05=0x7f09001c;
         public static final int button1=0x7f09001b;
         public static final int button_send_value=0x7f090018;
@@ -71,12 +70,14 @@ public final class R {
         public static final int textView3=0x7f090006;
         public static final int textView4=0x7f090008;
         public static final int textView5=0x7f090000;
+        public static final int valuediaplay2=0x7f09001d;
     }
     public static final class layout {
         public static final int actionbar_indeterminate_progress=0x7f030000;
         public static final int diag_layout=0x7f030001;
-        public static final int gatt_services_characteristics=0x7f030002;
-        public static final int listitem_device=0x7f030003;
+        public static final int diag_layout2=0x7f030002;
+        public static final int gatt_services_characteristics=0x7f030003;
+        public static final int listitem_device=0x7f030004;
     }
     public static final class menu {
         public static final int gatt_services=0x7f080000;

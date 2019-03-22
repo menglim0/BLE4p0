@@ -30,6 +30,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -37,8 +38,11 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -66,7 +70,8 @@ public class DeviceControlActivity extends Activity {
     private TextView mConnectionState;
     private TextView mLogInfor;    
     private TextView editT_DisplaySignalValue;
-    
+    private TextView valuediaplay1;  
+    private TextView valuediaplay2;  
     private ScrollView mscrollView;
     private EditText mDataField;
     private String mDeviceName;
@@ -79,9 +84,13 @@ public class DeviceControlActivity extends Activity {
     private Button button_CAN_config ; // CAN init button
     private EditText edittext_input_value ; // 数据在这里输入
     private EditText edittext_CAN_Config ; // 数据在这里输入
+    
+    private CheckBox shanghai=null;
+    
     private BluetoothLeService mBluetoothLeService;
   
-    private boolean mConnected = false;
+    private boolean mConnected = false,checkbox1_checked=false,checkbox2_checked=false,ReceiveIDConfig1_checked = false;
+    private boolean config_and_Check =false,config_and_Check_2 =false;
     private BluetoothGattCharacteristic mNotifyCharacteristic;
 
 
@@ -121,6 +130,9 @@ public class DeviceControlActivity extends Activity {
 							    {(byte)0xAA,(byte)0x01,(byte)0x05,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00}
 							    };
    
+   byte[] ReceiveCAN_Config = {(byte)0xAA,(byte)0x00,(byte)0x01,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00};		    
+		   
+   
    String[] SendData_Display=  {"0x14DAE1F1 0x02,0x3E,0x80,0x00,0x00,0x00,0x00,0x00",
 		   						"0x14DAE1F1 0x02,0x10,0x03,0x00,0x00,0x00,0x00,0x00",
 		   						"0x14DAE1F1 0x02,0x27,0x09,0x00,0x00,0x00,0x00,0x00",
@@ -145,6 +157,13 @@ public class DeviceControlActivity extends Activity {
    String signal_reslouation;
    String signal_Offset;
    String signal_Name;
+   
+   String signal_ReceiveID_2;
+   String signal_StartBit_2;
+   String signal_SigLength_2;
+   String signal_reslouation_2;
+   String signal_Offset_2;
+   String signal_Name_2;
  
    
    //String[] loginfo;
@@ -156,7 +175,12 @@ public class DeviceControlActivity extends Activity {
    double received_reslouation;
    int received_Offset;
   
-   
+   int Spin_index_2,Spin_CAN_index_2;
+   int received_ID_2;
+   int received_StartBit_2;
+   int received_SigLength_2;
+   double received_reslouation_2;
+   int received_Offset_2;
 
     
     /***********end of Add Spinner*******************/
@@ -209,16 +233,85 @@ public class DeviceControlActivity extends Activity {
             	//写数据的服务和characteristic
             	mnotyGattService = mBluetoothLeService.getSupportedGattServices(UUID.fromString("0000ffe5-0000-1000-8000-00805f9b34fb"));
                 characteristic = mnotyGattService.getCharacteristic(UUID.fromString("0000ffe9-0000-1000-8000-00805f9b34fb"));
+                
+                /* 设置可写 add 0321*/
+               // read();
+                mBluetoothLeService.setCharacteristicNotification(characteristic, true);
                 //读数据的服务和characteristic
                 readMnotyGattService = mBluetoothLeService.getSupportedGattServices(UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb"));
                 readCharacteristic = readMnotyGattService.getCharacteristic(UUID.fromString("0000ffe4-0000-1000-8000-00805f9b34fb"));
             } 
             //显示数据
             else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
-            	//将数据显示在mDataField上            	
-            	String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
-            	String display_Byte="";
+            	//将数据显示在mDataField上    
+            	
+            	
+            	//String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
+            	String data="A211120065001200000000000000";
+            	byte[] data_B = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
+            	//ZASfor
+            	int firstByte= 0, firstByte1= 0, firstByte2= 0, firstByte3= 0,firstByte4= 0;
+            	firstByte1= ((int)data_B[2]&0xff)<<24;
+            	firstByte2= ((int)data_B[3]&0xff)<<16;
+            	firstByte3= ((int)data_B[4]&0xff)<<8;
+            	firstByte4= ((int)data_B[5]&0xff);
+            			//+((int)data_B[3]&0xff)<<16+((int)data_B[4]&0xff)<<8+(int)data_B[5]&0xff;
+            	firstByte=firstByte1+firstByte2+firstByte3+firstByte4;
+            	
+            	
+            	
+            	int data_CAN=data_B[7]&0xff,DataHexStr_length,DataHexStr_length_index;
+            	long convertData;
+            	double phsValue_FromCAN;
+            	byte tempdata = (byte) 0x81;
+            	
+            	String DataHexStr = "0";
+            	
+            	DataHexStr=dataconvert.Data2Str(data_B);    
+            	convertData = dataconvert.DataStramp(data_B,received_StartBit,  received_SigLength);
+             	System.out.println("convertData----" + convertData);
+            	if(received_ID ==firstByte  &&  data_B[1]==(byte)0x81)
+            	{
+	            	if(checkbox1_checked ==true && received_ID ==firstByte  &&  data_B[1]==(byte)0x81)
+	            	{
+	            		data_CAN =data_CAN-received_Offset;
+	            		phsValue_FromCAN=(double)data_CAN*received_reslouation;
+	            		displayValueData1(Double.toString(phsValue_FromCAN));	
+	            		//displayData("ID "+ Integer.toHexString(firstByte)+" received");
+	            		displayData("ID_0x"+ Integer.toHexString(firstByte)+":"+DataHexStr+" received");
+	            		displayData(signal_Name+ "="+ data_CAN);
+	            		
+	            		//received_Offset
+	            	} 
+	            	else if(checkbox1_checked == false)
+	            	{
+	            		displayData("Please set the receive 1 to Enable");
+	            		displayValueData1("invalid");
+	            	}
+            	}
+            	//else
+            	//{displayData("Data received but no display requirement");}
+            	
+            	if(received_ID_2 ==firstByte  &&  data_B[1]==(byte)0x82)
+            	{
+            		data_CAN =data_CAN-received_Offset;
+            		displayValueData2(data_CAN);	
+            		displayData("ID "+ Integer.toHexString(firstByte)+" received");
+            		displayData(signal_Name+ "="+ data_CAN);
+            		
+            		//received_Offset
+            	}            	
+            	else if(data_B[1]==(byte)0x82)
+            	{
+            		displayData(signal_ReceiveID_2+" can't receive in list 2");
+            		displayValueData2("invalid");
+            	}
+                //int result = bytes&0xff;  
+            	String display_Byte="nothing";
             	System.out.println("data----" + data);
+            	
+            
+            	
             	
             	int[] data_String2Int_222={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
             	int[] CAN_Data={0,0,0,0,0,0,0,0};
@@ -240,7 +333,7 @@ public class DeviceControlActivity extends Activity {
             	}
             	*/
             
-
+/*
             	//data_string2char = data.toCharArray();
             	data_char_length = data_string2char.length;
             	for(length_loop_i=0;length_loop_i<data_char_length;length_loop_i++)
@@ -269,7 +362,7 @@ public class DeviceControlActivity extends Activity {
             	
             	int CAN_ID=0;
             	CAN_ID = (int)data_Char2byte[6]+ ((int)data_Char2byte[6])<<8;
-            	
+        */    	
             	//data_String2Int[0]=data_string2char[0];
             	//data_String2Int[1]=data_string2char[1];
             	//data_String2Int[1]=Integer.parseInt(data);
@@ -277,7 +370,7 @@ public class DeviceControlActivity extends Activity {
             	//data_String2Byte[1]=(byte) Integer.parseInt(data.substring(1,2));
             	//data_String2Byte[2]=(byte) Integer.parseInt(data.substring(2,3));
             	//data_String2Byte[3]=(byte) Integer.parseInt(data.substring(3,4));
-                displayData(display_Byte);
+               // displayData(display_Byte);
  
             }
         }
@@ -300,12 +393,17 @@ public class DeviceControlActivity extends Activity {
         ((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
         mConnectionState = (TextView) findViewById(R.id.connection_state);
         mLogInfor = (TextView) findViewById(R.id.textView3);
+        valuediaplay1= (TextView) findViewById(R.id.textView5);
+        valuediaplay2= (TextView) findViewById(R.id.valuediaplay2);
         editT_DisplaySignalValue = (TextView) findViewById(R.id.textView5);
         
         
         mLogInfor.setMovementMethod(ScrollingMovementMethod.getInstance());
+        mscrollView = (ScrollView) findViewById(R.id.scrollView1);
         
-        mscrollView= (ScrollView) findViewById(R.id.scrollView1);
+        
+        shanghai=(CheckBox)findViewById(R.id.CheckBox1);
+        
         mDataField =  (EditText) findViewById(R.id.data_value);
         
        	//final EditText editT_DisplaySignalName = (EditText) findViewById(R.id.textView4);
@@ -362,8 +460,7 @@ public class DeviceControlActivity extends Activity {
 
 
      								});
-   
- 
+
  	/*******Add Spinner***/
     final Spinner mSpinner_CAN_Config = (Spinner) findViewById(R.id.spinner2); 
 	// 建立数据源
@@ -523,7 +620,47 @@ button_CAN_config.setOnClickListener(new View.OnClickListener() {
 			}
 		});
         
-        
+shanghai.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){ 
+    @Override 
+    public void onCheckedChanged(CompoundButton buttonView, 
+            boolean isChecked) { 
+        // TODO Auto-generated method stub 
+        if(isChecked){ 
+           // editText1.setText(buttonView.getText()+"选中"); 
+        	if(ReceiveIDConfig1_checked == true)
+        	{
+        	shanghai.setChecked(true);
+        	checkbox1_checked = true;
+        	config_and_Check=true;
+        	ReceiveCAN_Config[1]=(byte) 0x81;
+        	ReceiveCAN_Config[5]=(byte) (received_ID&0xFF);
+        	ReceiveCAN_Config[4]=(byte) ((received_ID>>8)&0xFF);
+        	ReceiveCAN_Config[3]=(byte) ((received_ID>>16)&0xFF);
+        	ReceiveCAN_Config[2]=(byte) ((received_ID>>24)&0xFF);
+            characteristic.setValue(ReceiveCAN_Config);
+            mBluetoothLeService.writeCharacteristic(characteristic);
+        	}
+        	else
+        	{
+        		shanghai.setChecked(false);
+        		Toast.makeText(getApplicationContext(), "请先配置接收ID！", Toast.LENGTH_SHORT).show();
+        		checkbox1_checked = true;
+        		config_and_Check=false;
+        	}
+        }else{ 
+            //editText1.setText(buttonView.getText()+"取消选中"); 
+        	checkbox1_checked = false;
+        	config_and_Check=true;
+        	ReceiveCAN_Config[1]=(byte) 0x01;
+        	ReceiveCAN_Config[5]=(byte) 0x00;
+        	ReceiveCAN_Config[4]=(byte) 0x00;
+        	ReceiveCAN_Config[3]=(byte) 0x00;
+        	ReceiveCAN_Config[2]=(byte) 0x00;
+        	characteristic.setValue(ReceiveCAN_Config);
+            mBluetoothLeService.writeCharacteristic(characteristic);
+        } 
+    } 
+});       
         
         
         getActionBar().setTitle(mDeviceName);
@@ -574,6 +711,61 @@ button_CAN_config.setOnClickListener(new View.OnClickListener() {
                
                 
 				editT_DisplaySignalName.setText(signal_Name);
+				ReceiveIDConfig1_checked = true;
+   
+            } 
+        }); 
+        ad1.setNegativeButton("否", new DialogInterface.OnClickListener() { 
+            public void onClick(DialogInterface dialog, int i) { 
+   
+            } 
+        }); 
+        ad1.show();// 显示对话框
+
+    }
+    
+    /*diaglog start*/
+    public void alert_edit2(View view){
+    	LayoutInflater factory = LayoutInflater.from(this);
+    	
+    	//final TextView editT_DisplaySignalName = (TextView) findViewById(R.id.textView4);
+    	final TextView editT_DisplaySignalName2 = (TextView) findViewById(R.id.TextView05);
+    	
+        final View textEntryView = factory.inflate(R.layout.diag_layout2, null); 
+        
+        final EditText editT_ReceiveID = (EditText) textEntryView.findViewById(R.id.editT_ReceiveID); 
+        final EditText editT_StartBit = (EditText)textEntryView.findViewById(R.id.editT_StartBit); 
+        final EditText editT_SigLength = (EditText) textEntryView.findViewById(R.id.editT_SigLength); 
+        final EditText editT_reslouation = (EditText)textEntryView.findViewById(R.id.editT_reslouation);         
+        final EditText editT_Offset = (EditText) textEntryView.findViewById(R.id.editT_Offset); 
+        final EditText EditT_SignalName = (EditText)textEntryView.findViewById(R.id.EditT_SignalName);
+        
+        AlertDialog.Builder ad1 = new AlertDialog.Builder(this); 
+        ad1.setTitle("信号定义:"); 
+        ad1.setIcon(android.R.drawable.ic_dialog_info); 
+        ad1.setView(textEntryView); 
+        ad1.setPositiveButton("是", new DialogInterface.OnClickListener() { 
+            public void onClick(DialogInterface dialog, int i) { 
+                   
+                Log.i("111111", editT_ReceiveID.getText().toString()); 
+                
+           /*receive the info from the alert diaglog*/
+                signal_ReceiveID_2=editT_ReceiveID.getText().toString();
+                signal_StartBit_2=editT_StartBit.getText().toString();
+                signal_SigLength_2=editT_SigLength.getText().toString();
+                signal_reslouation_2=editT_reslouation.getText().toString();                
+                signal_Offset_2=editT_Offset.getText().toString();
+                signal_Name_2 = EditT_SignalName.getText().toString();
+                
+                
+                received_ID_2= dataconvert.DataStr2Integer(signal_ReceiveID); // convert the text to integer
+                 received_StartBit_2= dataconvert.DataStr2Decmial(signal_StartBit);
+                 received_SigLength_2= dataconvert.DataStr2Decmial(signal_SigLength);
+                 received_reslouation_2= dataconvert.DataStr2Double(signal_reslouation);// need floating type
+                 received_Offset_2= dataconvert.DataStr2Decmial(signal_Offset);
+               
+                
+				editT_DisplaySignalName2.setText(signal_Name);
                 
    
             } 
@@ -699,15 +891,36 @@ button_CAN_config.setOnClickListener(new View.OnClickListener() {
     }
 
     private void displayData(String data) {
+    	
         if (data != null) {
         	mLogInfor.append(data+"\n");
         	
+			mscrollView.scrollBy(0, 30);
+        	//mscrollView.scrollTo(0, mLogInfor.getBottom());
+        	//scroll2Bottom(mscrollView,mLogInfor);
+        	//mscrollView.scrollTo(0, 20); 
+        	//Handler mHandler = new Handler();
         	//mscrollView.fullScroll(ScrollView.FOCUS_DOWN);
-        	mscrollView.post(new Runnable() {
+        	/*
+        	mHandler.post(new Runnable() {
             	public void run() {
             		mscrollView.fullScroll(ScrollView.FOCUS_DOWN);
             		}
-    });
+             }); 	*/
+        	/*mscrollView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                    	mscrollView.post(new Runnable() {
+                            public void run() {
+                            	mscrollView.fullScroll(View.FOCUS_DOWN);
+                            }
+                        });
+                    }
+                    */
+               
+  
+        	
+        	
 
            // loginfo[0]=data;
            // loginfo[1]=data;
@@ -716,6 +929,50 @@ button_CAN_config.setOnClickListener(new View.OnClickListener() {
             //mLogInfor.setText("\n");
     }
     }
+    
+    public static void scroll2Bottom(final ScrollView scroll, final View inner) 
+    { 
+    	Handler handler = new Handler(); 
+    	handler.post(new Runnable() { 
+
+    	@Override 
+    	public void run() { 
+    	// TODO Auto-generated method stub 
+    	if (scroll == null || inner == null) { 
+    	return; 
+    	} 
+    	// 内层高度超过外层 
+    	int offset = inner.getMeasuredHeight() 
+    	- scroll.getMeasuredHeight(); 
+    	if (offset < 0) { 
+    	System.out.println("定位..."); 
+    	offset = 0; 
+    	} 
+    	scroll.scrollTo(0, offset); 
+    	} 
+    	}); 
+    	} 
+
+    
+    private void displayValueData1(int data) {
+    	
+    	valuediaplay1.setText(" "+data);
+    }
+
+private void displayValueData1(String data) {
+    	
+    	valuediaplay1.setText(data);
+    }
+
+private void displayValueData2(int data) {
+	
+	valuediaplay2.setText(" "+data);
+}
+
+private void displayValueData2(String data) {
+	
+	valuediaplay2.setText(data);
+}
 
     private static IntentFilter makeGattUpdateIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
@@ -735,5 +992,12 @@ button_CAN_config.setOnClickListener(new View.OnClickListener() {
         } 
 	 }
 */
+   // final ScrollView svResult = (ScrollView) findViewById(R.id.svResult);
+  //给CheckBox设置事件监听 
+    
+
+
+
+    
 }
 
