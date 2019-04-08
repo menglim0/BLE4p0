@@ -17,6 +17,7 @@
 package com.example.bluetooth.le;
 
 import java.lang.reflect.Field;
+import java.text.DecimalFormat;
 import java.util.UUID;
 
 import android.app.Activity;
@@ -85,7 +86,7 @@ public class DeviceControlActivity extends Activity {
     private EditText edittext_input_value ; // 数据在这里输入
     private EditText edittext_CAN_Config ; // 数据在这里输入
     
-    private CheckBox shanghai=null;
+    private CheckBox CheckBox1=null;
     
     private BluetoothLeService mBluetoothLeService;
   
@@ -121,16 +122,12 @@ public class DeviceControlActivity extends Activity {
    
    byte[] StartCmd = {(byte)0xFF,(byte)0x01,(byte)0xE1,(byte)0xF1,0x02,0x3E,(byte)0x80,(byte)0xFF,0x00,0x00,0x00,0x00,0x00,0x00};
    
-   byte[] CAN_init_Cmd = {(byte)0xAA,(byte)0x01,(byte)0x00,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   byte[] CAN_init_Cmd = {(byte)0xEA,(byte)0x01,(byte)0x00,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00};
    
-   byte[][] SendCAN_Config = {{(byte)0xAA,(byte)0x01,(byte)0x01,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00},
-							    {(byte)0xAA,(byte)0x01,(byte)0x02,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00},
-							    {(byte)0xAA,(byte)0x01,(byte)0x03,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00},
-							    {(byte)0xAA,(byte)0x01,(byte)0x04,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00},
-							    {(byte)0xAA,(byte)0x01,(byte)0x05,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00}
-							    };
+   byte[] SendCAN_Config = {(byte)0xEA,(byte)0x01,(byte)0x00,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00};							   
+							  
    
-   byte[] ReceiveCAN_Config = {(byte)0xAA,(byte)0x00,(byte)0x01,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00};		    
+   byte[] ReceiveCAN_Config = {(byte)0xE3,(byte)0x01,(byte)0x00,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00};		    
 		   
    
    String[] SendData_Display=  {"0x14DAE1F1 0x02,0x3E,0x80,0x00,0x00,0x00,0x00,0x00",
@@ -139,15 +136,16 @@ public class DeviceControlActivity extends Activity {
 		   						"0x14DAE1F1 0x10,0x0E,0x27,0x0A,0x20,0x20,0x20,0x20",
 		   						"0x10DBFEF1 0x04,0x14,0xFF,0xFF,0xFF,0x00,0x00,0x00"};
    
-   String[] SendData_CAN_Config=  {"CAN 33.3K",
-									"CAN 500K",
-									"CANFD 500K/2M",
-									"CANFD 500K/5M",
-									"CANFD 500K/5M"};
+   String[] SendData_CAN_Config=  {" CAN 33.3K",
+									" CAN 500K",
+									" CAN 500K",
+									" CAN 500K",
+									" Not Define"
+									};
    
-   String[] SendData_CANFD_Config=  {"CAN 500K",
-										"CANFD 2M",
-										"CANFD 5M",
+   String[] SendData_CANFD_Config=  {" /FD Dis",
+										" /FD 2M",
+										" /FD 5M"
 										};
    
   
@@ -168,7 +166,7 @@ public class DeviceControlActivity extends Activity {
    
    //String[] loginfo;
    
-   int Spin_index,Spin_CAN_index;
+   int Spin_index,Spin_CAN_index,Spin_CANFD_index;
    int received_ID;
    int received_StartBit;
    int received_SigLength;
@@ -181,7 +179,7 @@ public class DeviceControlActivity extends Activity {
    int received_SigLength_2;
    double received_reslouation_2;
    int received_Offset_2;
-
+   boolean ID_Config_reminder;
     
     /***********end of Add Spinner*******************/
 
@@ -247,7 +245,7 @@ public class DeviceControlActivity extends Activity {
             	
             	
             	//String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
-            	String data="A211120065001200000000000000";
+            	//String data="A211120065001200000000000000";
             	byte[] data_B = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
             	//ZASfor
             	int firstByte= 0, firstByte1= 0, firstByte2= 0, firstByte3= 0,firstByte4= 0;
@@ -259,24 +257,30 @@ public class DeviceControlActivity extends Activity {
             	firstByte=firstByte1+firstByte2+firstByte3+firstByte4;
             	
             	
-            	
-            	int data_CAN=data_B[7]&0xff,DataHexStr_length,DataHexStr_length_index;
+            	//data_CAN=data_B[7]&0xff,
+            	int data_CAN=0;
             	long convertData;
             	double phsValue_FromCAN;
-            	byte tempdata = (byte) 0x81;
+            //	byte tempdata = (byte) 0x81;
             	
             	String DataHexStr = "0";
             	
             	DataHexStr=dataconvert.Data2Str(data_B);    
-            	convertData = dataconvert.DataStramp(data_B,received_StartBit,  received_SigLength);
-             	System.out.println("convertData----" + convertData);
+
             	if(received_ID ==firstByte  &&  data_B[1]==(byte)0x81)
             	{
 	            	if(checkbox1_checked ==true && received_ID ==firstByte  &&  data_B[1]==(byte)0x81)
 	            	{
-	            		data_CAN =data_CAN-received_Offset;
+	                	convertData = dataconvert.DataStramp(data_B,received_StartBit,  received_SigLength);
+	                 	System.out.println("convertData----" + convertData);
+	                 	
+	            		data_CAN =(int) (convertData-received_Offset);
+	            		
 	            		phsValue_FromCAN=(double)data_CAN*received_reslouation;
-	            		displayValueData1(Double.toString(phsValue_FromCAN));	
+	            		DecimalFormat df=new DecimalFormat(".##");
+	            		//String st=df.format(phsValue_FromCAN);
+	            		//displayValueData1(Double.toString(phsValue_FromCAN));
+	            		displayValueData1(df.format(phsValue_FromCAN));
 	            		//displayData("ID "+ Integer.toHexString(firstByte)+" received");
 	            		displayData("ID_0x"+ Integer.toHexString(firstByte)+":"+DataHexStr+" received");
 	            		displayData(signal_Name+ "="+ data_CAN);
@@ -284,8 +288,11 @@ public class DeviceControlActivity extends Activity {
 	            		//received_Offset
 	            	} 
 	            	else if(checkbox1_checked == false)
-	            	{
-	            		displayData("Please set the receive 1 to Enable");
+	            	{    if(ID_Config_reminder==false)
+			            	{
+			            		displayData("Please set the receive 1 to Enable");
+			            		ID_Config_reminder = true;
+			            	}
 	            		displayValueData1("invalid");
 	            	}
             	}
@@ -306,71 +313,7 @@ public class DeviceControlActivity extends Activity {
             		displayData(signal_ReceiveID_2+" can't receive in list 2");
             		displayValueData2("invalid");
             	}
-                //int result = bytes&0xff;  
-            	String display_Byte="nothing";
-            	System.out.println("data----" + data);
-            	
-            
-            	
-            	
-            	int[] data_String2Int_222={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-            	int[] CAN_Data={0,0,0,0,0,0,0,0};
-            	int loop_str_index=0,data_strLength,temp=0;
-            	
-            	char[] data_string2char;            	
-            	byte[] data_Char2byte={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-            	int[] data_String2Int_local={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-            	
-            	int data_char_length,length_loop_i;
-            	data_strLength = data.length();
-            	data_string2char = data.toCharArray();
-            	/*
-            	for(loop_str_index=0;loop_str_index<data_strLength;loop_str_index++)
-            	{
-            		temp=dataconvert.subBytes(data,loop_str_index,loop_str_index+2);
-            		data_String2Int_222[loop_str_index]=temp;
-            		loop_str_index++;
-            	}
-            	*/
-            
-/*
-            	//data_string2char = data.toCharArray();
-            	data_char_length = data_string2char.length;
-            	for(length_loop_i=0;length_loop_i<data_char_length;length_loop_i++)
-            	{
-            		data_String2Int_local[length_loop_i]=data_string2char[length_loop_i];
-            		data_Char2byte[length_loop_i]=(byte) data_string2char[length_loop_i];
-            		if(length_loop_i>=6&&length_loop_i<14)
-            		{	
-            			CAN_Data[length_loop_i-6]=data_String2Int_local[length_loop_i];
-            			if(data_String2Int_local[length_loop_i]<16)
-            			{
-            			display_Byte= display_Byte +"0x0"+Integer.toHexString(data_String2Int_local[length_loop_i])+" ";
-            			}
-            			else
-            			{
-                			display_Byte= display_Byte +"0x"+Integer.toHexString(data_String2Int_local[length_loop_i])+" ";
-            			}	
-            			
-            		
-            		}
-         		
-
-            		data_String2Int_local[4] = data_String2Int_local[4] -40;
-            		editT_DisplaySignalValue.setText(String.valueOf(data_String2Int_local[4]));
-            	}
-            	
-            	int CAN_ID=0;
-            	CAN_ID = (int)data_Char2byte[6]+ ((int)data_Char2byte[6])<<8;
-        */    	
-            	//data_String2Int[0]=data_string2char[0];
-            	//data_String2Int[1]=data_string2char[1];
-            	//data_String2Int[1]=Integer.parseInt(data);
-            	//data_String2Byte[0]=(byte) Integer.parseInt(data.substring(0,1));
-            	//data_String2Byte[1]=(byte) Integer.parseInt(data.substring(1,2));
-            	//data_String2Byte[2]=(byte) Integer.parseInt(data.substring(2,3));
-            	//data_String2Byte[3]=(byte) Integer.parseInt(data.substring(3,4));
-               // displayData(display_Byte);
+      
  
             }
         }
@@ -392,17 +335,17 @@ public class DeviceControlActivity extends Activity {
         // Sets up UI references.
         ((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
         mConnectionState = (TextView) findViewById(R.id.connection_state);
-        mLogInfor = (TextView) findViewById(R.id.textView3);
-        valuediaplay1= (TextView) findViewById(R.id.textView5);
-        valuediaplay2= (TextView) findViewById(R.id.valuediaplay2);
-        editT_DisplaySignalValue = (TextView) findViewById(R.id.textView5);
+        mLogInfor = (TextView) findViewById(R.id.mLogInfor);
+        valuediaplay1= (TextView) findViewById(R.id.CAN_value_display1);
+        valuediaplay2= (TextView) findViewById(R.id.CAN_value_display2);
+      //  editT_DisplaySignalValue = (TextView) findViewById(R.id.textView5);
         
         
         mLogInfor.setMovementMethod(ScrollingMovementMethod.getInstance());
         mscrollView = (ScrollView) findViewById(R.id.scrollView1);
         
         
-        shanghai=(CheckBox)findViewById(R.id.CheckBox1);
+        CheckBox1=(CheckBox)findViewById(R.id.CheckBox1);
         
         mDataField =  (EditText) findViewById(R.id.data_value);
         
@@ -461,10 +404,10 @@ public class DeviceControlActivity extends Activity {
 
      								});
 
- 	/*******Add Spinner***/
+ 	/*******Add CAN Spinner***/
     final Spinner mSpinner_CAN_Config = (Spinner) findViewById(R.id.spinner2); 
 	// 建立数据源
-	final String[] mItems_CAN_Config = getResources().getStringArray(R.array.spinnername2);
+	final String[] mItems_CAN_Config = getResources().getStringArray(R.array.spinnername_CAN);
  // 建立Adapter并且绑定数据源
  	final ArrayAdapter<String> adapter_CAN_Config=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item, mItems_CAN_Config);
  	//绑定 Adapter到控件
@@ -489,8 +432,54 @@ public class DeviceControlActivity extends Activity {
 										
 								// TODO Auto-generated method stub
 							    // 将所选mySpinner 的值带入myTextView 中      						
-							edittext_CAN_Config.setText(SendData_CAN_Config[arg2]);//文本说明
+							
 							Spin_CAN_index= arg2;
+							edittext_CAN_Config.setText(SendData_CAN_Config[Spin_CAN_index]+SendData_CANFD_Config[Spin_CANFD_index]);//文本说明
+							SendCAN_Config[2]=(byte) ((SendCAN_Config[2]&0xF0)|(Spin_CAN_index&0x0F));
+						}
+
+							@Override
+							public void onNothingSelected(AdapterView<?> arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+
+							});
+ 	
+ 	
+ 	/*******Add CAN FD Spinner***/
+    final Spinner mSpinner_CANFD_Config = (Spinner) findViewById(R.id.CANFD_Config_Spinner); 
+	// 建立数据源
+	final String[] mItems_CANFD_Config = getResources().getStringArray(R.array.spinnername_CANFD);
+ // 建立Adapter并且绑定数据源
+ 	final ArrayAdapter<String> adapter_CANFD_Config=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item, mItems_CANFD_Config);
+ 	//绑定 Adapter到控件
+ 	mSpinner_CANFD_Config.setAdapter(adapter_CANFD_Config);
+ 	//4.为下拉列表设置各种点击事件，以响应菜单中的文本item被选中了，用setOnItemSelectedListener   
+ 	mSpinner_CANFD_Config.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {//选择item的选择点击监听事件
+														@Override
+							public void onItemSelected(AdapterView<?> arg0,
+									View arg1, int arg2, long arg3) {
+															
+							try {
+								//以下三行代码是解决问题所在
+								/*返回到包含spinner的activity中，再次点击相同的item无法实现跳转操作。研究了半天才发现原因，
+								Android spinner本身记住了上一次选择的项，再次点击相同的项是不会触发onitemselected事件的。*/
+								Field field = AdapterView.class.getDeclaredField("mOldSelectedPosition");
+								field.setAccessible(true);	//设置mOldSelectedPosition可访问
+								field.setInt(mSpinner_CAN_Config, AdapterView.INVALID_POSITION); //设置mOldSelectedPosition的值
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
+
+										
+								// TODO Auto-generated method stub
+							    // 将所选mySpinner 的值带入myTextView 中      					
+							
+							Spin_CANFD_index= arg2;
+							edittext_CAN_Config.setText(SendData_CAN_Config[Spin_CAN_index]+SendData_CANFD_Config[Spin_CANFD_index]);//文本说明
+							SendCAN_Config[2]=(byte) ((SendCAN_Config[2]&0x0F)|((Spin_CANFD_index<<4)&0xF0));
 						}
 
 							@Override
@@ -607,7 +596,7 @@ button_CAN_config.setOnClickListener(new View.OnClickListener() {
                         mNotifyCharacteristic = null;
                     }
 
-                        characteristic.setValue(SendCAN_Config[Spin_CAN_index]);
+                        characteristic.setValue(SendCAN_Config);
                         mBluetoothLeService.writeCharacteristic(characteristic);
                         Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
              
@@ -620,7 +609,7 @@ button_CAN_config.setOnClickListener(new View.OnClickListener() {
 			}
 		});
         
-shanghai.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){ 
+CheckBox1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){ 
     @Override 
     public void onCheckedChanged(CompoundButton buttonView, 
             boolean isChecked) { 
@@ -629,10 +618,10 @@ shanghai.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
            // editText1.setText(buttonView.getText()+"选中"); 
         	if(ReceiveIDConfig1_checked == true)
         	{
-        	shanghai.setChecked(true);
+        		CheckBox1.setChecked(true);
         	checkbox1_checked = true;
         	config_and_Check=true;
-        	ReceiveCAN_Config[1]=(byte) 0x81;
+        	ReceiveCAN_Config[1]=(byte) 0x01;
         	ReceiveCAN_Config[5]=(byte) (received_ID&0xFF);
         	ReceiveCAN_Config[4]=(byte) ((received_ID>>8)&0xFF);
         	ReceiveCAN_Config[3]=(byte) ((received_ID>>16)&0xFF);
@@ -642,7 +631,7 @@ shanghai.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
         	}
         	else
         	{
-        		shanghai.setChecked(false);
+        		CheckBox1.setChecked(false);
         		Toast.makeText(getApplicationContext(), "请先配置接收ID！", Toast.LENGTH_SHORT).show();
         		checkbox1_checked = true;
         		config_and_Check=false;

@@ -10,7 +10,8 @@ package com.example.bluetooth.le;
 public final class R {
     public static final class array {
         public static final int spinnername=0x7f060000;
-        public static final int spinnername2=0x7f060001;
+        public static final int spinnername_CAN=0x7f060001;
+        public static final int spinnername_CANFD=0x7f060002;
     }
     public static final class attr {
     }
@@ -33,23 +34,26 @@ public final class R {
         public static final int spinner_style=0x7f020005;
     }
     public static final class id {
-        public static final int Button01=0x7f09001e;
+        public static final int Button01=0x7f090020;
+        public static final int CANFD_Config_Spinner=0x7f090010;
         public static final int CAN_config=0x7f090013;
+        public static final int CAN_value_display1=0x7f09001b;
+        public static final int CAN_value_display2=0x7f09001f;
         public static final int CheckBox1=0x7f09001a;
+        public static final int CheckBox2=0x7f09001d;
         public static final int EditT_SignalName=0x7f09000b;
-        public static final int Spinner01=0x7f090010;
         public static final int Start_button=0x7f090017;
         public static final int TextView01=0x7f09000a;
         public static final int TextView02=0x7f090011;
         public static final int TextView03=0x7f09000e;
-        public static final int TextView05=0x7f09001c;
-        public static final int button1=0x7f09001b;
+        public static final int TextView05=0x7f09001e;
+        public static final int button1=0x7f09001c;
         public static final int button_send_value=0x7f090018;
         public static final int checkBox1=0x7f090016;
         public static final int connection_state=0x7f09000d;
         public static final int data_value=0x7f090014;
         public static final int device_address=0x7f09000c;
-        public static final int device_name=0x7f090020;
+        public static final int device_name=0x7f090023;
         public static final int editT_Offset=0x7f090009;
         public static final int editT_ReceiveID=0x7f090001;
         public static final int editT_SigLength=0x7f090005;
@@ -57,12 +61,13 @@ public final class R {
         public static final int editT_reslouation=0x7f090007;
         public static final int editText1=0x7f090012;
         public static final int edittext_input_value=0x7f090015;
-        public static final int menu_connect=0x7f090022;
-        public static final int menu_disconnect=0x7f090023;
-        public static final int menu_refresh=0x7f090021;
-        public static final int menu_scan=0x7f090024;
-        public static final int menu_stop=0x7f090025;
-        public static final int scrollView1=0x7f09001f;
+        public static final int mLogInfor=0x7f090022;
+        public static final int menu_connect=0x7f090025;
+        public static final int menu_disconnect=0x7f090026;
+        public static final int menu_refresh=0x7f090024;
+        public static final int menu_scan=0x7f090027;
+        public static final int menu_stop=0x7f090028;
+        public static final int scrollView1=0x7f090021;
         public static final int spinner1=0x7f090019;
         public static final int spinner2=0x7f09000f;
         public static final int textView1=0x7f090002;
@@ -70,7 +75,6 @@ public final class R {
         public static final int textView3=0x7f090006;
         public static final int textView4=0x7f090008;
         public static final int textView5=0x7f090000;
-        public static final int valuediaplay2=0x7f09001d;
     }
     public static final class layout {
         public static final int actionbar_indeterminate_progress=0x7f030000;

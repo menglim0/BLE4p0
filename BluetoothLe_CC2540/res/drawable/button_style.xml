@@ -2,11 +2,11 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android" >
  
     <!-- 主体背景颜色值 -->
-    <solid android:color="#800000" />  
+    <solid android:color="#FFF8DC" />  
     <!-- 连框宽度和颜色值 -->
     <stroke  
                android:width="5dp"
-               android:color="#00008B" />  
+               android:color="#F5F5DC" />  
         
     <corners android:topLeftRadius="20dp"   
              android:topRightRadius="20dp"    

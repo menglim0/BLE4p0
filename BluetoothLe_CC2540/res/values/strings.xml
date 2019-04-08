@@ -43,12 +43,19 @@
         <item>ClearAllDTC</item>
     </string-array>
     
-                <string-array name="spinnername2">
+                <string-array name="spinnername_CAN">
         <item>LS_CAN</item>
         <item>MS_CAN </item>
         <item>BD_CAN</item>
         <item>PT_CAN</item>
         <item>OtherCAN</item>
+    </string-array>
+    
+                 <string-array name="spinnername_CANFD">
+        <item>NotUsed</item>
+        <item>2M </item>
+        <item>5M</item>
+
     </string-array>
     
     

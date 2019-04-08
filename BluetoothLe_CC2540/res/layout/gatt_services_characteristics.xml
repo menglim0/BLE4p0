@@ -143,7 +143,7 @@
                             android:textStyle="bold" />
 
                         <Spinner
-                            android:id="@+id/Spinner01"
+                            android:id="@+id/CANFD_Config_Spinner"
                             android:layout_width="200dp"
                             android:layout_height="40dp"
                             android:layout_marginBottom="5dp"
@@ -175,7 +175,10 @@
                             android:layout_marginBottom="5dp"
                             android:layout_marginRight="20dp"
                             android:layout_weight="1"
+                            android:cursorVisible="false"
+                            android:enabled="false"
                             android:background="@drawable/edit_style"
+                            android:textColor="#000000"
                             android:ems="10"
                             android:inputType="text" />
                     </LinearLayout>
@@ -188,7 +191,7 @@
                     android:layout_marginTop="20dp"
                     android:background="@drawable/button_style"
                     android:text="CAN\nConfig"
-                    android:textColor="#FFFFFF" />
+                    android:textColor="#000000" />
             </LinearLayout>
 
             <LinearLayout
@@ -253,7 +256,7 @@
                         android:id="@+id/Start_button"
                         android:layout_width="241dp"
                         android:layout_height="72dp"
-                        android:text="Start" />
+                        android:text="UnLock FIREWALL" />
 
                     <Button
                         android:id="@+id/button_send_value"
@@ -295,7 +298,7 @@
                         android:textSize="20sp" />
 
                     <TextView
-                        android:id="@+id/textView5"
+                        android:id="@+id/CAN_value_display1"
                         android:gravity="center"
                         android:layout_width="218dp"
                         android:layout_height="fill_parent"
@@ -316,7 +319,7 @@
                     android:layout_height="40dp" >
 
                     <CheckBox
-                        android:id="@+id/CheckBox1"
+                        android:id="@+id/CheckBox2"
                         android:layout_width="wrap_content"
                         android:layout_height="fill_parent"
                         android:layout_marginRight="10dp"
@@ -331,7 +334,7 @@
                         android:textSize="20sp" />
 
                     <TextView
-                        android:id="@+id/valuediaplay2"
+                        android:id="@+id/CAN_value_display2"
                         android:gravity="center"
                         android:layout_width="218dp"
                         android:layout_height="fill_parent"
@@ -383,7 +386,7 @@
                     >
 
                     <TextView
-                        android:id="@+id/textView3"
+                        android:id="@+id/mLogInfor"
                         android:layout_width="match_parent"
                         android:layout_height="580dp"
                         android:layout_marginBottom="10dp"
