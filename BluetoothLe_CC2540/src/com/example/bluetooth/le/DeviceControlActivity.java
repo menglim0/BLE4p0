@@ -17,7 +17,24 @@
 package com.example.bluetooth.le;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
+
+import org.achartengine.ChartFactory;
+import org.achartengine.GraphicalActivity;
+import org.achartengine.GraphicalView;
+import org.achartengine.chart.PointStyle;
+import org.achartengine.model.XYMultipleSeriesDataset;
+import org.achartengine.renderer.XYMultipleSeriesRenderer;
+import org.achartengine.model.TimeSeries;
+import org.achartengine.model.XYSeries;
+import org.achartengine.renderer.XYSeriesRenderer;
+
+import com.example.bluetooth.le.LineGraphicView;
+import com.example.bluetooth.le.R;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -28,14 +45,21 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 /*******Add Spinner***/
@@ -55,6 +79,9 @@ public class DeviceControlActivity extends Activity {
     public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
     public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
 
+    
+    ArrayList<Double> yList;
+	LineGraphicView tu;
     //连接状态
     private TextView mConnectionState;
     private EditText mDataField;
@@ -94,8 +121,22 @@ public class DeviceControlActivity extends Activity {
 		   						"0x41,0x42,0x33,0x34,0x30,0x31,0x33,0x34,0x30,0x31,0x33,0x10",
 		   						"0x51,0x52,0x33,0x34,0x30,0x31,0x33,0x34,0x30,0x31,0x33,0x10"};
    int Spin_index;
+   
+   public List<double[]> x = new ArrayList<double[]>(); 
+   public List<double[]> y = new ArrayList<double[]>();
 
-    
+   private Timer drawTimer = new Timer();
+   private TimerTask drawTask;
+   private Handler Drawhandler;
+   
+   public LinearLayout layout;
+   public GraphicalView chart;
+   public XYMultipleSeriesDataset dataset;
+   public String[] titles;
+   public XYMultipleSeriesRenderer renderer;
+   public Context context1;
+   public XYSeries series;
+   public XYSeries series2;
     /***********end of Add Spinner*******************/
 
     // 管理服务的生命周期
@@ -153,79 +194,66 @@ public class DeviceControlActivity extends Activity {
             	String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
             	System.out.println("data----" + data);
                 displayData(data);
+                updateLineChart();
+
+          
             }
         }
     };    
     private void clearUI() {
         //mGattServicesList.setAdapter((SimpleExpandableListAdapter) null);
-        mDataField.setText(R.string.no_data);
+        //mDataField.setText(R.string.no_data);
     }
+   
 
-    @Override
+	@SuppressWarnings("null")
+	@Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.gatt_services_characteristics);
-
+        //Context context1 = getApplicationContext();
         final Intent intent = getIntent();
         mDeviceName = intent.getStringExtra(EXTRAS_DEVICE_NAME);
         mDeviceAddress = intent.getStringExtra(EXTRAS_DEVICE_ADDRESS);
-
+       
         // Sets up UI references.
         ((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
         mConnectionState = (TextView) findViewById(R.id.connection_state);
-        mDataField =  (EditText) findViewById(R.id.data_value);
+        //mDataField =  (EditText) findViewById(R.id.data_value);
         
-        /* convert data*/
-        //SendData_Display[0][0] = (String) SendData[0][0];
+        //add line chart
+       titles = new String[] { "First", "Second"};
+       // String[] titles = new String[] { "First"};
+
+
+        x.add(new double[] { 0} );         
+        y.add(new double[] { 0});
         
-        /*******Add Spinner***/
-        final Spinner mSpinner = (Spinner) findViewById(R.id.spinner1); 
-    	// 建立数据源
-		final String[] mItems = getResources().getStringArray(R.array.spinnername);
-     // 建立Adapter并且绑定数据源
-     	final ArrayAdapter<String> adapter=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item, mItems);
-     	//绑定 Adapter到控件
-     	mSpinner.setAdapter(adapter);
-     	//4.为下拉列表设置各种点击事件，以响应菜单中的文本item被选中了，用setOnItemSelectedListener   
-     			mSpinner.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {//选择item的选择点击监听事件
-     															@Override
-     								public void onItemSelected(AdapterView<?> arg0,
-     										View arg1, int arg2, long arg3) {
-     																
-										try {
-											//以下三行代码是解决问题所在
-											/*返回到包含spinner的activity中，再次点击相同的item无法实现跳转操作。研究了半天才发现原因，
-											Android spinner本身记住了上一次选择的项，再次点击相同的项是不会触发onitemselected事件的。*/
-											Field field = AdapterView.class.getDeclaredField("mOldSelectedPosition");
-											field.setAccessible(true);	//设置mOldSelectedPosition可访问
-											field.setInt(mSpinner, AdapterView.INVALID_POSITION); //设置mOldSelectedPosition的值
-										} catch (Exception e) {
-											e.printStackTrace();
-										}
+        x.add(new double[] { 0, 2, 4, 6, 8} );
+        y.add(new double[] { 0,0,0,0,0}); 
+     
 
-     											
-     									// TODO Auto-generated method stub
-     								    // 将所选mySpinner 的值带入myTextView 中      						
-     							edittext_input_value.setText(SendData_Display[arg2]);//文本说明
-     							Spin_index= arg2;
-     							}
+        dataset = LineGraphicView.buildDataset(titles, x, y);
 
-     								@Override
-     								public void onNothingSelected(AdapterView<?> arg0) {
-     									// TODO Auto-generated method stub
-     									
-     								}
+        int[] colors = new int[] { Color.BLUE, Color.GREEN}; 
+        PointStyle[] styles = new PointStyle[] { PointStyle.CIRCLE, PointStyle.DIAMOND}; 
+        renderer = LineGraphicView.buildRenderer(colors, styles, true);
 
-
-     								});
+        LineGraphicView.setChartSettings(renderer, "Line Chart Demo", "X", "Y", 0, 100, 0, 80 , Color.WHITE, Color.WHITE);
+        layout = (LinearLayout)findViewById(R.id.chart_show); 
+        chart = ChartFactory.getLineChartView(this, dataset, renderer);
+        layout.addView(chart, new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.MATCH_PARENT));
+         
+       
         
         button_send_value = (Button) findViewById(R.id.button_send_value);
-        edittext_input_value = (EditText) findViewById(R.id.edittext_input_value);
+        //edittext_input_value = (EditText) findViewById(R.id.edittext_input_value);
         
         button_send_value.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
 			public void onClick(View v) {
+				
 				read();
 				
                 final int charaProp = characteristic.getProperties();
@@ -241,18 +269,13 @@ public class DeviceControlActivity extends Activity {
                     //读取数据，数据将在回调函数中
                     //mBluetoothLeService.readCharacteristic(characteristic);
                     byte[] value = new byte[20];
+                    boolean flag=false;
                     value[0] = (byte) 0x00;
-                    if(edittext_input_value.getText().toString().equals("")){
+                    if(flag){
                     	Toast.makeText(getApplicationContext(), "请输入！", Toast.LENGTH_SHORT).show();
                     	return;
                     }else{
-                    	//WriteBytes[0]=SendComand;Spin_index
-                    	
-                    	//SendData[0]=SendData[Spin_index];
-                    	WriteBytes = edittext_input_value.getText().toString().getBytes();
-                    	//characteristic.setValue(value[0],BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-                        characteristic.setValue(SendData[Spin_index]);
-                    	//characteristic.setValue(WriteBytes);
+                        characteristic.setValue(SendData[Spin_index]);                    	
                         mBluetoothLeService.writeCharacteristic(characteristic);
                         Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
                     }
@@ -261,7 +284,9 @@ public class DeviceControlActivity extends Activity {
                     mNotifyCharacteristic = characteristic;
                     mBluetoothLeService.setCharacteristicNotification(characteristic, true);
                 }
-                edittext_input_value.setText("");
+                
+           
+           
 			}
 		});
        
@@ -298,6 +323,10 @@ public class DeviceControlActivity extends Activity {
         super.onPause();
         unregisterReceiver(mGattUpdateReceiver);
     }
+    
+    
+    
+    
 
     @Override
     protected void onDestroy() {
@@ -346,7 +375,7 @@ public class DeviceControlActivity extends Activity {
 
     private void displayData(String data) {
         if (data != null) {
-            mDataField.setText(data);
+            //mDataField.setText(data);
         }
     }
 
@@ -358,5 +387,47 @@ public class DeviceControlActivity extends Activity {
         intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
         return intentFilter;
     }
+    
+       private void updateLineChart()
+       {
+
+			layout.removeView(chart);//这里需要注意，很多人只做是没有用这个方法，导致图不能重新绘制，
+        
+        for (int i = 0; i < 2; i++) 
+			{ 		
+			
+			
+  		  XYSeries series325= dataset.getSeries()[1-i];
+  		  dataset.removeSeries(series325);
+  		  series325.clear();
+						
+			}
+       //dataset1.removeSeries(x[1]);
+       // dataset1.removeSeries(1);
+        //x.clear();
+        //y.clear();
+        //y.add(1,new double[] { 0, 8, 3, 6, 3, 10,12,14,16,18,20,2,2});
+        List<double[]> x1 = new ArrayList<double[]>(); 
+        List<double[]> y1 = new ArrayList<double[]>();
+        
+        double x_list[]=new double[250];
+        double y_list[]=new double[250];
+        for(int i=0;i<250;i++)
+        {
+       	 
+       	 x_list[i]=(double)i/2.5;
+       	 y_list[i]=(double)i/4;
+        }
+       // double[] y_list={0, 8, 3, 6, 3, 10,12,14,16,18,20,2,2,24};
+        //x_list[15]=1;
+        x.set(1,x_list );         
+        y.set(1,y_list);
+       // XYMultipleSeriesDataset dataset2 = buildDataset(titles, x, y);
+        dataset = LineGraphicView.buildDataset(titles, x, y);
+        chart = ChartFactory.getLineChartView(DeviceControlActivity.this, dataset, renderer);
+       //chart.postInvalidate();
+        layout.addView(chart);	
+       }
+    
 }
 

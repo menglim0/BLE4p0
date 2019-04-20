@@ -39,7 +39,8 @@ limitations under the License.
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".DeviceControlActivity"/>
+        <activity android:name="org.achartengine.GraphicalActivity" />
+        <activity android:name=".DeviceControlActivity"/>        
         <service android:name=".BluetoothLeService" android:enabled="true"/>
     </application>
 </manifest>
