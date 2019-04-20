@@ -193,6 +193,8 @@ public class DeviceControlActivity extends Activity {
             	//将数据显示在mDataField上
             	String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
             	System.out.println("data----" + data);
+            	
+            	int receivedata = dataconvert.DataStr2Integer(data);
                 displayData(data);
                 updateLineChart();
 
