@@ -120,7 +120,7 @@ public class DeviceControlActivity extends Activity {
 		   						"0x38,0x39,0x40,0x34,0x30,0x31,0x33,0x34,0x30,0x31,0x33,0x10",
 		   						"0x41,0x42,0x33,0x34,0x30,0x31,0x33,0x34,0x30,0x31,0x33,0x10",
 		   						"0x51,0x52,0x33,0x34,0x30,0x31,0x33,0x34,0x30,0x31,0x33,0x10"};
-   int Spin_index;
+   int Spin_index,DateReceiveIndex,Receive_Datalength,total_cnt;
    
    public List<double[]> x = new ArrayList<double[]>(); 
    public List<double[]> y = new ArrayList<double[]>();
@@ -137,6 +137,11 @@ public class DeviceControlActivity extends Activity {
    public Context context1;
    public XYSeries series;
    public XYSeries series2;
+   
+	int data_press[]=new int[800];
+	int data_Pos[]=new int[800];
+   
+   boolean StartRecord,DataTransfer_Complete;
     /***********end of Add Spinner*******************/
 
     // 管理服务的生命周期
@@ -191,14 +196,109 @@ public class DeviceControlActivity extends Activity {
             //显示数据
             else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
             	//将数据显示在mDataField上
-            	String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
-            	System.out.println("data----" + data);
+            	//String data = intent.getStringExtra(BluetoothLeService.EXTRA_DATA);
+            	byte[] data_B = intent.getByteArrayExtra(BluetoothLeService.EXTRA_DATA);
             	
-            	int receivedata = dataconvert.DataStr2Integer(data);
-                displayData(data);
-                updateLineChart();
+            	Receive_Datalength=data_B.length;
+            	
 
-          
+            	byte data_total[]=new byte[3200];
+            	
+            	if(Receive_Datalength%4==0)
+            	{
+            		for(int groupCnt=0;groupCnt<(Receive_Datalength/4);groupCnt++)
+            		{
+            			DateReceiveIndex=dataconvert.Byte2Integer(data_B,4*groupCnt,2);
+            			if(DateReceiveIndex<800)
+                		{
+            			data_press[DateReceiveIndex]=dataconvert.Byte2Integer(data_B,4*groupCnt,2);
+            			data_Pos[DateReceiveIndex]=dataconvert.Byte2Integer(data_B,4*groupCnt+2,2); 
+            			System.out.println("DateReceiveIndex----" +DateReceiveIndex+"--"+ data_press[DateReceiveIndex]+"--"+data_Pos[DateReceiveIndex]);
+	            			if(DateReceiveIndex>=798)
+	            			{
+	            				DataTransfer_Complete=true;
+	            			}
+                		}
+            			else
+            			{
+            				DataTransfer_Complete=true;
+            			}
+            		}
+            		
+            	}
+            	
+            	System.out.println("Receive_Datalength----" +Receive_Datalength);
+            	
+
+            	
+            	for(int datacnt=0;datacnt<Receive_Datalength;datacnt++)
+            	{
+            		//data_total[total_cnt]=data_B[datacnt];
+            		total_cnt++;
+            		
+            	}
+            	/*
+            	if(dataconvert.Byte2Integer(data_B,0,2)==1)
+            	{
+            	
+            		StartRecord=true;
+            	}
+            	*/
+            	/*
+            	StartRecord=true;
+            	if(DateReceiveIndex>=799)
+            	{
+            		DateReceiveIndex=0;
+            		DataTransfer_Complete=true;
+            	}
+            	else
+            	{	
+            		DateReceiveIndex++;
+            	}*/
+            /*	
+            	DateReceiveIndex=dataconvert.Byte2Integer(data_B,0,2);
+            	if(DateReceiveIndex>799)
+            	{
+            		DateReceiveIndex=799;
+            	}
+            	
+            	if(StartRecord==true){
+            		if(DateReceiveIndex<800)
+            		{
+            			
+            			if(DateReceiveIndex<800)
+            			{
+            			//data_press[DateReceiveIndex]=dataconvert.Byte2Integer(data_B,0,2);
+            			try{
+            				data_press[DateReceiveIndex]=dataconvert.Byte2Integer(data_B,0,2);
+            			data_Pos[DateReceiveIndex]=dataconvert.Byte2Integer(data_B,2,2);  
+            			}
+            			catch(ArrayIndexOutOfBoundsException  e){
+            				System.out.println(e);
+            				//System.out.println("数组越界异常:"+DateReceiveIndex);
+            				}
+            			}
+            		}
+            	}*/
+            	//System.out.println("DateReceiveIndex----" +DateReceiveIndex+"--"+ data_press[DateReceiveIndex]+"--"+data_Pos[DateReceiveIndex]);
+            	//System.out.println("DateReceiveIndex----" +data_Pos+"--"+ data_Pos[DateReceiveIndex]);
+            	//int receivedata = dataconvert.DataStr2Integer(data);
+                //displayData(data);
+            	double x_list[]=new double[800];
+                double y_list[]=new double[800];
+                if(DataTransfer_Complete==true)
+                {
+                for(int i=0;i<800;i++)
+                {
+               	 
+               	 x_list[i]=(double)data_press[i]/8;
+               	 y_list[i]=(double)data_Pos[i]/100;
+                   	//x_list[i]=(double)i/8;
+                   	//y_list[i]=(double)i/100;
+                }
+                updateLineChart(x_list,y_list);
+                DataTransfer_Complete=false;
+                }
             }
         }
     };    
@@ -390,44 +490,23 @@ public class DeviceControlActivity extends Activity {
         return intentFilter;
     }
     
-       private void updateLineChart()
+       private void updateLineChart(double x_list[],double y_list[])
        {
 
-			layout.removeView(chart);//这里需要注意，很多人只做是没有用这个方法，导致图不能重新绘制，
+		layout.removeView(chart);//这里需要注意，很多人只做是没有用这个方法，导致图不能重新绘制，
         
         for (int i = 0; i < 2; i++) 
-			{ 		
-			
-			
+		{ 						
   		  XYSeries series325= dataset.getSeries()[1-i];
   		  dataset.removeSeries(series325);
-  		  series325.clear();
-						
-			}
-       //dataset1.removeSeries(x[1]);
-       // dataset1.removeSeries(1);
-        //x.clear();
-        //y.clear();
-        //y.add(1,new double[] { 0, 8, 3, 6, 3, 10,12,14,16,18,20,2,2});
-        List<double[]> x1 = new ArrayList<double[]>(); 
-        List<double[]> y1 = new ArrayList<double[]>();
-        
-        double x_list[]=new double[250];
-        double y_list[]=new double[250];
-        for(int i=0;i<250;i++)
-        {
-       	 
-       	 x_list[i]=(double)i/2.5;
-       	 y_list[i]=(double)i/4;
-        }
-       // double[] y_list={0, 8, 3, 6, 3, 10,12,14,16,18,20,2,2,24};
-        //x_list[15]=1;
+  		  series325.clear();						
+		}
+     
         x.set(1,x_list );         
         y.set(1,y_list);
-       // XYMultipleSeriesDataset dataset2 = buildDataset(titles, x, y);
+      
         dataset = LineGraphicView.buildDataset(titles, x, y);
-        chart = ChartFactory.getLineChartView(DeviceControlActivity.this, dataset, renderer);
-       //chart.postInvalidate();
+        chart = ChartFactory.getLineChartView(DeviceControlActivity.this, dataset, renderer);   
         layout.addView(chart);	
        }
     

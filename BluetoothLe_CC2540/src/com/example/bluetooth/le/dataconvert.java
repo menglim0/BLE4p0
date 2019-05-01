@@ -53,6 +53,32 @@ public class dataconvert {
 		return value;
     }
 	
+public static int Byte2Integer(byte[] data,int startindex,int length) {
+    	
+    	int value=0,temp_Value=0,temp_Value1=0;
+
+        if (data != null) {
+        	
+        	for(int i=0;i<length;i++)
+        	{
+        	temp_Value1 = value<<8;
+        	temp_Value = (int)((data[startindex+i]&0xff));        	
+        	value=temp_Value1+temp_Value;  
+        	}
+           }
+		return value;
+    }
+
+public static int Byte2Integer(byte data) {
+	
+	int value=0,temp_Value=0;
+
+    
+    	temp_Value =(int) (data&0xff);
+    	value=temp_Value;   
+	return value;
+}
+	
 	public static int DataStr2Decmial(String data) {
     	
     	int value=0,temp_Value2=0,temp_Value=0,char_length=0,loop_i=0;

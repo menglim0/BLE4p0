@@ -155,7 +155,8 @@ public class BluetoothLeService extends Service {
                 	//以十六进制的形式输出
                     stringBuilder.append(String.format("%02X ", byteChar));
                // intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());
-                intent.putExtra(EXTRA_DATA, new String(data));
+              //  intent.putExtra(EXTRA_DATA, new String(data));
+                intent.putExtra(EXTRA_DATA, data);
             }
         }
         //发送广播，广播接收器在哪？？
