@@ -18,8 +18,23 @@ package com.example.bluetooth.le;
 
 import java.lang.reflect.Field;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
+import com.example.bluetooth.le.OsExcel.CurCell;
+
+import jxl.Cell;
+import jxl.Sheet;
+import jxl.Workbook;
+import jxl.read.biff.BiffException;
+import jxl.write.Label;
+import jxl.write.WritableCell;
+import jxl.write.WritableSheet;
+import jxl.write.WritableWorkbook;
+import jxl.write.WriteException;
 import android.app.Activity;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
@@ -33,6 +48,7 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -180,7 +196,17 @@ public class DeviceControlActivity extends Activity {
    double received_reslouation_2;
    int received_Offset_2;
    boolean ID_Config_reminder;
-    
+   
+   /* 处理Excel 相关变量*/
+   int Column_Excel_Sheet0,Column_Excel_Sheet1,Column_Excel_Sheet2;
+   List<byte[]> mArrayList_CANData;
+   
+   /*开线程*/
+   private Handler Drawhandler;
+   private Timer drawTimer = new Timer();
+   private TimerTask drawTask;
+   boolean FirewallsPassReq;
+   int FirewallIndex;
     /***********end of Add Spinner*******************/
 
     // 管理服务的生命周期
@@ -357,6 +383,87 @@ public class DeviceControlActivity extends Activity {
         
         /*保持屏幕常亮*/
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        
+        /**/
+      //这里的Handler实例将配合下面的Timer实例，完成定时更新图表的功能
+        
+        Drawhandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) 
+        {
+         //刷新图表
+        	if(FirewallsPassReq==true)
+        	{
+        		
+        		//updateChart();
+        			read();
+    				
+                    final int charaProp = characteristic.getProperties();
+                    
+                    //如果该char可写
+                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                        // If there is an active notification on a characteristic, clear
+                        // it first so it doesn't update the data field on the user interface.
+                        if (mNotifyCharacteristic != null) {
+                            mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
+                            mNotifyCharacteristic = null;
+                        }
+
+                            //characteristic.setValue(StartCmd);
+                            characteristic.setValue(mArrayList_CANData.get(FirewallIndex+2));                      
+                            mBluetoothLeService.writeCharacteristic(characteristic);                       
+                            
+                            Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
+                 
+                    }
+                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                        mNotifyCharacteristic = characteristic;
+                        mBluetoothLeService.setCharacteristicNotification(characteristic, true);
+                    }
+                    
+                    FirewallIndex++;
+            		if(FirewallIndex>=4)
+            		{
+            			FirewallIndex=0;
+            			FirewallsPassReq=false;
+            		}
+        		
+        	}         
+         super.handleMessage(msg);
+        }
+        };
+        
+        drawTask = new TimerTask() {
+        @Override
+        public void run() {
+        Message message = new Message();
+            message.what = 1;
+            Drawhandler.sendMessage(message);
+        }
+        };
+        
+        drawTimer.schedule(drawTask, 100, 100);
+        
+        
+        /*处理Excel数据*/
+        
+        String Excel_path="signal.xls";
+        List<CurCell> mArrayList_Sheet1 = new ArrayList<CurCell>();
+        
+        mArrayList_Sheet1=OsExcel.ReadExcel(Excel_path,1);
+        Column_Excel_Sheet1=OsExcel.Getcolumns();
+        //tv2.setText(String.valueOf(Column_Excel_Sheet1));
+        List<String> mArrayList_Column = new ArrayList<String>();
+        List<String> mArrayList_Row = new ArrayList<String>();
+        mArrayList_CANData = new ArrayList<byte[]>();
+        //mArrayList_Column=OsExcel.Getcolumns_list(mArrayList_Sheet1,0,6,11);
+        for(int row_i=1;row_i<7;row_i++)
+        {
+        	mArrayList_Row=OsExcel.Getrows_list(mArrayList_Sheet1,row_i,7,11);                	
+        	mArrayList_CANData.add(dataconvert.StrToChar_List(mArrayList_Row));        	
+        }
+        
+        /*End of 处理Excel数据*/
         
         /* convert data*/
         //SendData_Display[0][0] = (String) SendData[0][0];
@@ -550,6 +657,10 @@ public class DeviceControlActivity extends Activity {
 			public void onClick(View v) {
 				
 				final boolean action_state;
+				FirewallsPassReq=true;
+				FirewallIndex=0;
+			/*
+			{
 				read();
 				
                 final int charaProp = characteristic.getProperties();
@@ -563,8 +674,10 @@ public class DeviceControlActivity extends Activity {
                         mNotifyCharacteristic = null;
                     }
 
-                        characteristic.setValue(StartCmd);
-                        mBluetoothLeService.writeCharacteristic(characteristic);
+                        //characteristic.setValue(StartCmd);
+                        characteristic.setValue(mArrayList_CANData.get(0));                      
+                        mBluetoothLeService.writeCharacteristic(characteristic);                       
+                        
                         Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
              
                 }
@@ -572,6 +685,9 @@ public class DeviceControlActivity extends Activity {
                     mNotifyCharacteristic = characteristic;
                     mBluetoothLeService.setCharacteristicNotification(characteristic, true);
                 }
+                for(int delayCnt=0;delayCnt<2000;delayCnt++);
+			}*/
+                
                 edittext_input_value.setText("");
 			}
 		});

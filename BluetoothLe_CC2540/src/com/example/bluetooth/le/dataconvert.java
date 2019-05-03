@@ -1,6 +1,8 @@
 package com.example.bluetooth.le;
 
 import  java.lang.String;
+import java.util.ArrayList;
+import java.util.List;
 
 import android.util.Log;
 
@@ -215,6 +217,107 @@ public static String Data2Str(byte[] data) {
     	}
          value = DataHexStr;
 	return value;
+}
+
+public static byte[] StrToChar_List(List<String> list) { 
+	List<byte[]> CAN_Date= new ArrayList<byte[]>();
+	//List<byte[]> mArrayList_CANData = new ArrayList<byte[]>();
+    byte[] b = new byte[13]; 
+    String temp = null;
+    byte[] d = new byte[30];
+    byte temp_result_Byte,temp_result_Byte1,temp_result_Byte2;
+    char[] tempchar= new char[8];
+    int i,j,loop_i,char_length,Temp_int,Data_index=0;
+    int value=0,temp_Value2=0,temp_Value=0;
+    
+	char[] string2char={0,0,0,0,0,0,0,0};
+	byte[] signal_Char2byte={0,0,0,0,0,0,0,0};
+    
+    for(i=1;i<list.size();i++)
+    {
+    	if(i<list.size()-1)
+    	{
+    	temp=list.get(i).substring(2); 
+    	}
+    	else
+    	{
+    		temp=list.get(i);
+    	}
+    	System.out.println("output----" + temp);
+    	tempchar=temp.toCharArray();
+    	char_length=tempchar.length;
+    	
+        	for(loop_i=0;loop_i<char_length;loop_i++)
+            {     d[loop_i]=0;
+	             signal_Char2byte[loop_i]=(byte) tempchar[loop_i];
+	             
+	             
+	             if(signal_Char2byte[loop_i]>=48&&signal_Char2byte[loop_i]<=57)
+	             {
+	            	 temp_Value = signal_Char2byte[loop_i]-48;
+	             } 
+	             else if(signal_Char2byte[loop_i]>=97&&signal_Char2byte[loop_i]<=102)
+	             {temp_Value = signal_Char2byte[loop_i]-97+10;}
+	             else if(signal_Char2byte[loop_i]>=65&&signal_Char2byte[loop_i]<=70)
+	             {temp_Value = signal_Char2byte[loop_i]-65+10;}
+	          
+	             d[loop_i]=(byte)temp_Value;
+	             System.out.println("loop_i----"+loop_i+"--" + d[loop_i]);
+	             
+	             //b[Data_index] = (byte) (temp_Value%256); 
+	             //Data_index++;
+	             
+	             
+	             /*
+	             temp_Value2=temp_Value<<(4*(char_length-loop_i-1));	             
+	             value = value+ temp_Value2;*/	             
+	         }
+        	
+        	if(char_length%2==0)
+        	{
+	        	for(loop_i=0;loop_i<char_length;loop_i++)
+	        	{
+	        		
+		        		temp_result_Byte1=(byte) (d[loop_i]<<4);
+		        		temp_result_Byte2=d[loop_i+1];
+		        		temp_result_Byte =(byte)( temp_result_Byte1+temp_result_Byte2);
+	        		
+	        		  //temp_result_Byte= (byte) ((byte) d[loop_i]<<4+(byte) d[loop_i+1]); 
+	        		  b[Data_index]=temp_result_Byte;
+	        		 System.out.println("output----" +d[loop_i]+"----"+ d[loop_i+1]);
+	        		 System.out.println("output----" +Data_index+"----"+ b[Data_index]);
+		             Data_index++;
+		             loop_i++;
+	        	}
+        	}
+        	else
+        	{	
+        		b[Data_index]=d[0];
+        		Data_index++;
+	        	for(loop_i=1;loop_i<char_length;loop_i++)
+	        	{
+	        		
+		        		temp_result_Byte1=(byte) (d[loop_i]<<4);
+		        		temp_result_Byte2=d[loop_i+1];
+		        		temp_result_Byte =(byte)( temp_result_Byte1+temp_result_Byte2);
+	        		
+	        		  //temp_result_Byte= (byte) ((byte) d[loop_i]<<4+(byte) d[loop_i+1]); 
+	        		  b[Data_index]=temp_result_Byte;
+	        		 System.out.println("output----" +d[loop_i]+"----"+ d[loop_i+1]);
+	        		 System.out.println("output----" +Data_index+"----"+ b[Data_index]);
+		             Data_index++;
+		             loop_i++;
+	        	}
+        	}
+        	
+    	//b[i] = (byte) (value%256);   
+       	}
+    
+    //for(i=0;i<Data_index;i++)
+    
+    CAN_Date.add(b);
+
+    return b; 
 }
 
 }
