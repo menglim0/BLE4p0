@@ -101,6 +101,7 @@ public class DeviceControlActivity extends Activity {
     private Button button_CAN_config ; // CAN init button
     private EditText edittext_input_value ; // 数据在这里输入
     private EditText edittext_CAN_Config ; // 数据在这里输入
+    private TextView editT_DisplaySignalName;
     
     private CheckBox CheckBox1=null;
     
@@ -122,7 +123,7 @@ public class DeviceControlActivity extends Activity {
     int[] data_String2Int= new int[14];
     
     int receiveID_Int=0;               
-    
+    int ReceiveID1;
     
     byte[] data_String2Byte = new byte[4];
     
@@ -198,8 +199,8 @@ public class DeviceControlActivity extends Activity {
    boolean ID_Config_reminder;
    
    /* 处理Excel 相关变量*/
-   int Column_Excel_Sheet0,Column_Excel_Sheet1,Column_Excel_Sheet2;
-   List<byte[]> mArrayList_CANData;
+   int Column_Excel_Sheet0,Column_Excel_Sheet1,Column_Excel_Sheet2,Column_Excel_Sheet_Receive;
+   List<byte[]> mArrayList_CANData,mArrayList_Receive_Var;
    
    /*开线程*/
    private Handler Drawhandler;
@@ -293,10 +294,10 @@ public class DeviceControlActivity extends Activity {
             	
             	DataHexStr=dataconvert.Data2Str(data_B);    
 
-            	if(received_ID ==firstByte  &&  data_B[1]==(byte)0x81)
+            	if(received_ID ==1225  &&  data_B[1]==(byte)0x81)
             	{
-	            	if(checkbox1_checked ==true && received_ID ==firstByte  &&  data_B[1]==(byte)0x81)
-	            	{
+	            	//if(checkbox1_checked ==true && received_ID ==firstByte  &&  data_B[1]==(byte)0x81)
+	            	//{
 	                	convertData = dataconvert.DataStramp(data_B,received_StartBit,  received_SigLength);
 	                 	System.out.println("convertData----" + convertData);
 	                 	
@@ -308,11 +309,12 @@ public class DeviceControlActivity extends Activity {
 	            		//displayValueData1(Double.toString(phsValue_FromCAN));
 	            		displayValueData1(df.format(phsValue_FromCAN));
 	            		//displayData("ID "+ Integer.toHexString(firstByte)+" received");
-	            		displayData("ID_0x"+ Integer.toHexString(firstByte)+":"+DataHexStr+" received");
-	            		displayData(signal_Name+ "="+ data_CAN);
+	            		//displayData("ID_0x"+ Integer.toHexString(firstByte)+":"+DataHexStr+" received");
+	            		//displayData(signal_Name+ "="+ data_CAN);
 	            		
 	            		//received_Offset
-	            	} 
+	            	//} 
+	            		/*
 	            	else if(checkbox1_checked == false)
 	            	{    if(ID_Config_reminder==false)
 			            	{
@@ -320,7 +322,7 @@ public class DeviceControlActivity extends Activity {
 			            		ID_Config_reminder = true;
 			            	}
 	            		displayValueData1("invalid");
-	            	}
+	            	}*/
             	}
             	//else
             	//{displayData("Data received but no display requirement");}
@@ -349,7 +351,8 @@ public class DeviceControlActivity extends Activity {
         mDataField.setText(R.string.no_data);
     }
 
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.gatt_services_characteristics);
@@ -374,6 +377,8 @@ public class DeviceControlActivity extends Activity {
         CheckBox1=(CheckBox)findViewById(R.id.CheckBox1);
         
         mDataField =  (EditText) findViewById(R.id.data_value);
+        
+        editT_DisplaySignalName = (TextView) findViewById(R.id.textView4);
         
        	//final EditText editT_DisplaySignalName = (EditText) findViewById(R.id.textView4);
         
@@ -442,17 +447,17 @@ public class DeviceControlActivity extends Activity {
         }
         };
         
-        drawTimer.schedule(drawTask, 100, 100);
+        drawTimer.schedule(drawTask, 10, 50);
         
         
         /*处理Excel数据*/
         
         String Excel_path="signal.xls";
         List<CurCell> mArrayList_Sheet1 = new ArrayList<CurCell>();
+        List<CurCell> mArrayList_Sheet_Receive = new ArrayList<CurCell>();
         
         mArrayList_Sheet1=OsExcel.ReadExcel(Excel_path,1);
-        Column_Excel_Sheet1=OsExcel.Getcolumns();
-        //tv2.setText(String.valueOf(Column_Excel_Sheet1));
+        Column_Excel_Sheet1=OsExcel.Getcolumns();       
         List<String> mArrayList_Column = new ArrayList<String>();
         List<String> mArrayList_Row = new ArrayList<String>();
         mArrayList_CANData = new ArrayList<byte[]>();
@@ -463,6 +468,33 @@ public class DeviceControlActivity extends Activity {
         	mArrayList_CANData.add(dataconvert.StrToChar_List(mArrayList_Row));        	
         }
         
+        /*处理接收数据*/
+       
+        mArrayList_Sheet_Receive=OsExcel.ReadExcel(Excel_path,2); //接收Excel内容
+        Column_Excel_Sheet_Receive=OsExcel.Getcolumns();   //获取列数   
+        List<String> mArrayList_Receive_Column = new ArrayList<String>();
+        List<String> mArrayList_Receive_Row = new ArrayList<String>();
+        
+        mArrayList_Receive_Var=new ArrayList<byte[]>();
+        
+        
+        Column_Excel_Sheet_Receive=OsExcel.Getcolumns(); 
+        for(int row_i=1;row_i<2;row_i++)
+        {
+        	mArrayList_Receive_Row=OsExcel.Getrows_list(mArrayList_Sheet1,row_i,2,6);                	
+        	//mArrayList_Receive_Var.add(dataconvert.StrToChar_List(mArrayList_Row));        	
+        }
+        String SignalName=mArrayList_Receive_Row.get(0);
+        ReceiveID1=dataconvert.DataStr2Integer(mArrayList_Receive_Row.get(1).substring(2));
+        
+        editT_DisplaySignalName.setText(SignalName);
+        
+        received_ID= ReceiveID1; // convert the text to integer
+        received_StartBit= dataconvert.DataStr2Decmial(mArrayList_Receive_Row.get(2));
+        received_SigLength= dataconvert.DataStr2Decmial(mArrayList_Receive_Row.get(3));
+        received_reslouation= dataconvert.DataStr2Double(mArrayList_Receive_Row.get(4));// need floating type
+        received_Offset= dataconvert.DataStr2Decmial(mArrayList_Receive_Row.get(5));
+      
         /*End of 处理Excel数据*/
         
         /* convert data*/
@@ -732,30 +764,18 @@ CheckBox1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(
         // TODO Auto-generated method stub 
         if(isChecked){ 
            // editText1.setText(buttonView.getText()+"选中"); 
-        	if(ReceiveIDConfig1_checked == true)
-        	{
-        		CheckBox1.setChecked(true);
-        	checkbox1_checked = true;
-        	config_and_Check=true;
+        	
         	ReceiveCAN_Config[1]=(byte) 0x01;
-        	ReceiveCAN_Config[5]=(byte) (received_ID&0xFF);
-        	ReceiveCAN_Config[4]=(byte) ((received_ID>>8)&0xFF);
-        	ReceiveCAN_Config[3]=(byte) ((received_ID>>16)&0xFF);
-        	ReceiveCAN_Config[2]=(byte) ((received_ID>>24)&0xFF);
+        	ReceiveCAN_Config[5]=(byte) (ReceiveID1&0xFF);
+        	ReceiveCAN_Config[4]=(byte) ((ReceiveID1>>8)&0xFF);
+        	ReceiveCAN_Config[3]=(byte) ((ReceiveID1>>16)&0xFF);
+        	ReceiveCAN_Config[2]=(byte) ((ReceiveID1>>24)&0xFF);
             characteristic.setValue(ReceiveCAN_Config);
             mBluetoothLeService.writeCharacteristic(characteristic);
-        	}
-        	else
-        	{
-        		CheckBox1.setChecked(false);
-        		Toast.makeText(getApplicationContext(), "请先配置接收ID！", Toast.LENGTH_SHORT).show();
-        		checkbox1_checked = true;
-        		config_and_Check=false;
-        	}
+        	
         }else{ 
             //editText1.setText(buttonView.getText()+"取消选中"); 
-        	checkbox1_checked = false;
-        	config_and_Check=true;
+ 
         	ReceiveCAN_Config[1]=(byte) 0x01;
         	ReceiveCAN_Config[5]=(byte) 0x00;
         	ReceiveCAN_Config[4]=(byte) 0x00;
@@ -778,7 +798,7 @@ CheckBox1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(
     public void alert_edit(View view){
     	LayoutInflater factory = LayoutInflater.from(this);
     	
-    	final TextView editT_DisplaySignalName = (TextView) findViewById(R.id.textView4);
+    	
     	//final TextView editT_DisplaySignaValue = (TextView) findViewById(R.id.textView5);
     	
         final View textEntryView = factory.inflate(R.layout.diag_layout, null); 

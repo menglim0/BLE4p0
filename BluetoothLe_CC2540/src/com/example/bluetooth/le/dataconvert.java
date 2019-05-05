@@ -222,7 +222,8 @@ public static String Data2Str(byte[] data) {
 public static byte[] StrToChar_List(List<String> list) { 
 	List<byte[]> CAN_Date= new ArrayList<byte[]>();
 	//List<byte[]> mArrayList_CANData = new ArrayList<byte[]>();
-    byte[] b = new byte[13]; 
+    byte[] b = new byte[14]; 
+    byte[] c = new byte[14];
     String temp = null;
     byte[] d = new byte[30];
     byte temp_result_Byte,temp_result_Byte1,temp_result_Byte2;
@@ -313,11 +314,14 @@ public static byte[] StrToChar_List(List<String> list) {
     	//b[i] = (byte) (value%256);   
        	}
     
-    //for(i=0;i<Data_index;i++)
-    
-    CAN_Date.add(b);
+    for(int i_chg=0;i_chg<13;i_chg++){
+    	
+    	c[i_chg+1]=b[i_chg];
+    }
+    c[0]=(byte) 225;//send mode length14
+    //CAN_Date.add(b);
 
-    return b; 
+    return c; 
 }
 
 }
