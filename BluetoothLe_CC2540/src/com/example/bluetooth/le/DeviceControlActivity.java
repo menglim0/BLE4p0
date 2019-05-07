@@ -19,6 +19,7 @@ package com.example.bluetooth.le;
 import java.lang.reflect.Field;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -101,7 +102,11 @@ public class DeviceControlActivity extends Activity {
     private Button button_CAN_config ; // CAN init button
     private EditText edittext_input_value ; // 数据在这里输入
     private EditText edittext_CAN_Config ; // 数据在这里输入
-    private TextView editT_DisplaySignalName;
+    TextView[] editT_DisplaySignalName;
+    TextView[] valuediaplay;
+   // private editT_DisplaySignalName[]=new TextView[3];
+    //private TextView editT_DisplaySignalName2;
+    //private TextView editT_DisplaySignalName3;
     
     private CheckBox CheckBox1=null;
     
@@ -109,6 +114,7 @@ public class DeviceControlActivity extends Activity {
   
     private boolean mConnected = false,checkbox1_checked=false,checkbox2_checked=false,ReceiveIDConfig1_checked = false;
     private boolean config_and_Check =false,config_and_Check_2 =false;
+    private boolean Sending_Frame =false,Sending_CMD =false;
     private BluetoothGattCharacteristic mNotifyCharacteristic;
 
 
@@ -200,14 +206,21 @@ public class DeviceControlActivity extends Activity {
    
    /* 处理Excel 相关变量*/
    int Column_Excel_Sheet0,Column_Excel_Sheet1,Column_Excel_Sheet2,Column_Excel_Sheet_Receive;
-   List<byte[]> mArrayList_CANData,mArrayList_Receive_Var;
+   int Row_Excel_Sheet0,Row_Excel_Sheet1,Row_Excel_Sheet_Receive;
+   List<byte[]> mArrayList_CANData,mArrayList_Receive_Var,mArrayList_CANData_MultiFrame;
+   List<String> mArrayList_Receive_SignalName;
    
+   ArrayList<String> signal_name_Array;
+   
+   List<String> mArrayList_Row;
+   List<ArrayList<String>>mArrayList_Row_total;
    /*开线程*/
    private Handler Drawhandler;
    private Timer drawTimer = new Timer();
    private TimerTask drawTask;
    boolean FirewallsPassReq;
    int FirewallIndex;
+   int SendingCmd_Index,SendingCmd_Index_Max;
     /***********end of Add Spinner*******************/
 
     // 管理服务的生命周期
@@ -292,7 +305,12 @@ public class DeviceControlActivity extends Activity {
             	
             	String DataHexStr = "0";
             	
-            	DataHexStr=dataconvert.Data2Str(data_B);    
+            	DataHexStr=dataconvert.Data2Str(data_B);
+            	
+            	for(int index=0;index<3;index++)
+            	{
+            		displayValueData(index,index,valuediaplay);
+            	}
 
             	if(received_ID ==1225  &&  data_B[1]==(byte)0x81)
             	{
@@ -308,6 +326,7 @@ public class DeviceControlActivity extends Activity {
 	            		//String st=df.format(phsValue_FromCAN);
 	            		//displayValueData1(Double.toString(phsValue_FromCAN));
 	            		displayValueData1(df.format(phsValue_FromCAN));
+	            		displayValueData(df.format(phsValue_FromCAN),1,valuediaplay);
 	            		//displayData("ID "+ Integer.toHexString(firstByte)+" received");
 	            		//displayData("ID_0x"+ Integer.toHexString(firstByte)+":"+DataHexStr+" received");
 	            		//displayData(signal_Name+ "="+ data_CAN);
@@ -365,26 +384,29 @@ public class DeviceControlActivity extends Activity {
         ((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
         mConnectionState = (TextView) findViewById(R.id.connection_state);
         mLogInfor = (TextView) findViewById(R.id.mLogInfor);
-        valuediaplay1= (TextView) findViewById(R.id.CAN_value_display1);
-        valuediaplay2= (TextView) findViewById(R.id.CAN_value_display2);
-      //  editT_DisplaySignalValue = (TextView) findViewById(R.id.textView5);
+        valuediaplay1= (TextView) findViewById(R.id.Receive_Value_01);
+        valuediaplay2= (TextView) findViewById(R.id.Receive_Value_02);
+      //  editT_DisplaySignalValue = (TextView) findViewById(R.id.data_value);
         
         
         mLogInfor.setMovementMethod(ScrollingMovementMethod.getInstance());
         mscrollView = (ScrollView) findViewById(R.id.scrollView1);
         
         
-        CheckBox1=(CheckBox)findViewById(R.id.CheckBox1);
+        CheckBox1=(CheckBox)findViewById(R.id.checkBox1);
         
         mDataField =  (EditText) findViewById(R.id.data_value);
         
-        editT_DisplaySignalName = (TextView) findViewById(R.id.textView4);
+        editT_DisplaySignalName=new TextView[3];
+        editT_DisplaySignalName[0] = (TextView) findViewById(R.id.SignalName_01);
+        editT_DisplaySignalName[1] = (TextView) findViewById(R.id.SignalName_02);
+        editT_DisplaySignalName[2] = (TextView) findViewById(R.id.SignalName_03); 
         
-       	//final EditText editT_DisplaySignalName = (EditText) findViewById(R.id.textView4);
+        valuediaplay =new TextView[3];
         
-        //private EditText editT_DisplaySignalName = (EditText) findViewById(R.id.textView4);
-        
-        
+        valuediaplay[0]= (TextView) findViewById(R.id.Receive_Value_01);
+        valuediaplay[1]= (TextView) findViewById(R.id.Receive_Value_02);
+        valuediaplay[2]= (TextView) findViewById(R.id.Receive_Value_03);
         
         /*保持屏幕常亮*/
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -427,13 +449,50 @@ public class DeviceControlActivity extends Activity {
                     }
                     
                     FirewallIndex++;
-            		if(FirewallIndex>=4)
+            		if(FirewallIndex>=5)
             		{
             			FirewallIndex=0;
             			FirewallsPassReq=false;
             		}
         		
-        	}         
+        	}
+        	if(Sending_CMD==true &&Sending_Frame==true)
+        		
+        	{
+        		read();
+				
+                final int charaProp = characteristic.getProperties();
+                
+                //如果该char可写
+                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                    // If there is an active notification on a characteristic, clear
+                    // it first so it doesn't update the data field on the user interface.
+                    if (mNotifyCharacteristic != null) {
+                        mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
+                        mNotifyCharacteristic = null;
+                    }
+
+                        //characteristic.setValue(StartCmd);
+                        characteristic.setValue(mArrayList_CANData_MultiFrame.get(SendingCmd_Index));                      
+                        mBluetoothLeService.writeCharacteristic(characteristic);                       
+                        
+                        Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
+             
+                }
+                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                    mNotifyCharacteristic = characteristic;
+                    mBluetoothLeService.setCharacteristicNotification(characteristic, true);
+                }
+                
+                SendingCmd_Index++;
+        		if(SendingCmd_Index>=SendingCmd_Index_Max)
+        		{
+        			SendingCmd_Index=0;
+        			Sending_CMD=false;
+        			Sending_Frame=false;
+        		}
+        		
+        	}
          super.handleMessage(msg);
         }
         };
@@ -447,7 +506,7 @@ public class DeviceControlActivity extends Activity {
         }
         };
         
-        drawTimer.schedule(drawTask, 10, 50);
+        drawTimer.schedule(drawTask, 10, 100);
         
         
         /*处理Excel数据*/
@@ -457,15 +516,22 @@ public class DeviceControlActivity extends Activity {
         List<CurCell> mArrayList_Sheet_Receive = new ArrayList<CurCell>();
         
         mArrayList_Sheet1=OsExcel.ReadExcel(Excel_path,1);
-        Column_Excel_Sheet1=OsExcel.Getcolumns();       
+        Column_Excel_Sheet1=OsExcel.Getcolumns(); 
+        Row_Excel_Sheet1 = OsExcel.Getrows();
         List<String> mArrayList_Column = new ArrayList<String>();
-        List<String> mArrayList_Row = new ArrayList<String>();
+        mArrayList_Row = new ArrayList<String>();
+        mArrayList_Row_total=new ArrayList<ArrayList<String>>(); 
         mArrayList_CANData = new ArrayList<byte[]>();
+        mArrayList_CANData_MultiFrame = new ArrayList<byte[]>();
         //mArrayList_Column=OsExcel.Getcolumns_list(mArrayList_Sheet1,0,6,11);
-        for(int row_i=1;row_i<7;row_i++)
+        
+        mArrayList_Receive_SignalName = new ArrayList<String>();
+        for(int row_i=1;row_i<Row_Excel_Sheet1;row_i++)
         {
-        	mArrayList_Row=OsExcel.Getrows_list(mArrayList_Sheet1,row_i,7,11);                	
-        	mArrayList_CANData.add(dataconvert.StrToChar_List(mArrayList_Row));        	
+        	mArrayList_Row=OsExcel.Getrows_list(mArrayList_Sheet1,row_i,Row_Excel_Sheet1,11);
+        	mArrayList_Row_total.add((ArrayList<String>) mArrayList_Row);
+        	mArrayList_CANData.add(dataconvert.StrToChar_List(mArrayList_Row));
+        	mArrayList_Receive_SignalName.add(mArrayList_Row.get(0));
         }
         
         /*处理接收数据*/
@@ -478,16 +544,18 @@ public class DeviceControlActivity extends Activity {
         mArrayList_Receive_Var=new ArrayList<byte[]>();
         
         
-        Column_Excel_Sheet_Receive=OsExcel.Getcolumns(); 
-        for(int row_i=1;row_i<2;row_i++)
+        Column_Excel_Sheet_Receive=OsExcel.Getcolumns();
+        Row_Excel_Sheet_Receive = OsExcel.Getrows();
+        for(int row_i=1;row_i<Row_Excel_Sheet_Receive;row_i++)
         {
-        	mArrayList_Receive_Row=OsExcel.Getrows_list(mArrayList_Sheet1,row_i,2,6);                	
+        	mArrayList_Receive_Row=OsExcel.Getrows_list(mArrayList_Sheet1,row_i,2,6);
+        	//String SignalName=mArrayList_Receive_Row.get(0);
+        	editT_DisplaySignalName[row_i-1].setText(mArrayList_Receive_Row.get(0));
         	//mArrayList_Receive_Var.add(dataconvert.StrToChar_List(mArrayList_Row));        	
         }
-        String SignalName=mArrayList_Receive_Row.get(0);
-        ReceiveID1=dataconvert.DataStr2Integer(mArrayList_Receive_Row.get(1).substring(2));
         
-        editT_DisplaySignalName.setText(SignalName);
+        
+        ReceiveID1=dataconvert.DataStr2Integer(mArrayList_Receive_Row.get(1).substring(2));
         
         received_ID= ReceiveID1; // convert the text to integer
         received_StartBit= dataconvert.DataStr2Decmial(mArrayList_Receive_Row.get(2));
@@ -505,7 +573,12 @@ public class DeviceControlActivity extends Activity {
     	// 建立数据源
 		final String[] mItems = getResources().getStringArray(R.array.spinnername);
      // 建立Adapter并且绑定数据源
-     	final ArrayAdapter<String> adapter=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item, mItems);
+     	//final ArrayAdapter<String> adapter=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item, mItems);
+		
+		signal_name_Array = MyList.getSingle(mArrayList_Receive_SignalName);
+		
+		final ArrayAdapter<String> adapter=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item, signal_name_Array);
+		
      	//绑定 Adapter到控件
      	mSpinner.setAdapter(adapter);
      	
@@ -526,11 +599,28 @@ public class DeviceControlActivity extends Activity {
 										} catch (Exception e) {
 											e.printStackTrace();
 										}
-
-     											
+										if(!mArrayList_CANData_MultiFrame.isEmpty())
+										{
+										mArrayList_CANData_MultiFrame.clear();
+										}
+										SendingCmd_Index_Max=0;
+										String inputString="Sending Command:";	
+										//mArrayList_CANData_MultiFrame.add(mArrayList_CANData.get(arg2));
      									// TODO Auto-generated method stub
-     								    // 将所选mySpinner 的值带入myTextView 中      						
-     							edittext_input_value.setText(SendData_Display[arg2]);//文本说明
+     								    // 将所选mySpinner 的值带入myTextView 中      
+										for(int i=arg2;i<Row_Excel_Sheet1-1;i++)
+										{	
+										if(signal_name_Array.get(arg2)==mArrayList_Receive_SignalName.get(i))
+										{
+										inputString +="\n"+ MyList.getTxt(mArrayList_Row_total.get(i));
+										mArrayList_CANData_MultiFrame.add(mArrayList_CANData.get(i));
+										Sending_Frame =true;
+										SendingCmd_Index_Max++;
+										}
+										}
+										
+												//mArrayList_Row.get(1)+mArrayList_Row.get(2)+mArrayList_Row.get(3)+mArrayList_Row.get(4);
+     							edittext_input_value.setText(inputString);//文本说明
      							Spin_index= arg2;
      							}
 
@@ -543,100 +633,15 @@ public class DeviceControlActivity extends Activity {
 
      								});
 
- 	/*******Add CAN Spinner***/
-    final Spinner mSpinner_CAN_Config = (Spinner) findViewById(R.id.spinner2); 
-	// 建立数据源
-	final String[] mItems_CAN_Config = getResources().getStringArray(R.array.spinnername_CAN);
- // 建立Adapter并且绑定数据源
- 	final ArrayAdapter<String> adapter_CAN_Config=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item, mItems_CAN_Config);
- 	//绑定 Adapter到控件
- 	mSpinner_CAN_Config.setAdapter(adapter_CAN_Config);
- 	//4.为下拉列表设置各种点击事件，以响应菜单中的文本item被选中了，用setOnItemSelectedListener   
- 	mSpinner_CAN_Config.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {//选择item的选择点击监听事件
-														@Override
-							public void onItemSelected(AdapterView<?> arg0,
-									View arg1, int arg2, long arg3) {
-															
-							try {
-								//以下三行代码是解决问题所在
-								/*返回到包含spinner的activity中，再次点击相同的item无法实现跳转操作。研究了半天才发现原因，
-								Android spinner本身记住了上一次选择的项，再次点击相同的项是不会触发onitemselected事件的。*/
-								Field field = AdapterView.class.getDeclaredField("mOldSelectedPosition");
-								field.setAccessible(true);	//设置mOldSelectedPosition可访问
-								field.setInt(mSpinner_CAN_Config, AdapterView.INVALID_POSITION); //设置mOldSelectedPosition的值
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-
-										
-								// TODO Auto-generated method stub
-							    // 将所选mySpinner 的值带入myTextView 中      						
-							
-							Spin_CAN_index= arg2;
-							edittext_CAN_Config.setText(SendData_CAN_Config[Spin_CAN_index]+SendData_CANFD_Config[Spin_CANFD_index]);//文本说明
-							SendCAN_Config[2]=(byte) ((SendCAN_Config[2]&0xF0)|(Spin_CAN_index&0x0F));
-						}
-
-							@Override
-							public void onNothingSelected(AdapterView<?> arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-
-							});
  	
- 	
- 	/*******Add CAN FD Spinner***/
-    final Spinner mSpinner_CANFD_Config = (Spinner) findViewById(R.id.CANFD_Config_Spinner); 
-	// 建立数据源
-	final String[] mItems_CANFD_Config = getResources().getStringArray(R.array.spinnername_CANFD);
- // 建立Adapter并且绑定数据源
- 	final ArrayAdapter<String> adapter_CANFD_Config=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item, mItems_CANFD_Config);
- 	//绑定 Adapter到控件
- 	mSpinner_CANFD_Config.setAdapter(adapter_CANFD_Config);
- 	//4.为下拉列表设置各种点击事件，以响应菜单中的文本item被选中了，用setOnItemSelectedListener   
- 	mSpinner_CANFD_Config.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {//选择item的选择点击监听事件
-														@Override
-							public void onItemSelected(AdapterView<?> arg0,
-									View arg1, int arg2, long arg3) {
-															
-							try {
-								//以下三行代码是解决问题所在
-								/*返回到包含spinner的activity中，再次点击相同的item无法实现跳转操作。研究了半天才发现原因，
-								Android spinner本身记住了上一次选择的项，再次点击相同的项是不会触发onitemselected事件的。*/
-								Field field = AdapterView.class.getDeclaredField("mOldSelectedPosition");
-								field.setAccessible(true);	//设置mOldSelectedPosition可访问
-								field.setInt(mSpinner_CAN_Config, AdapterView.INVALID_POSITION); //设置mOldSelectedPosition的值
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-
-										
-								// TODO Auto-generated method stub
-							    // 将所选mySpinner 的值带入myTextView 中      					
-							
-							Spin_CANFD_index= arg2;
-							edittext_CAN_Config.setText(SendData_CAN_Config[Spin_CAN_index]+SendData_CANFD_Config[Spin_CANFD_index]);//文本说明
-							SendCAN_Config[2]=(byte) ((SendCAN_Config[2]&0x0F)|((Spin_CANFD_index<<4)&0xF0));
-						}
-
-							@Override
-							public void onNothingSelected(AdapterView<?> arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-
-							});
  	
         
         button_send_value = (Button) findViewById(R.id.button_send_value);
         button_start = (Button) findViewById(R.id.Start_button);
-        button_CAN_config = (Button) findViewById(R.id.CAN_config);
+   
         
-        edittext_input_value = (EditText) findViewById(R.id.edittext_input_value);
-        edittext_CAN_Config = (EditText) findViewById(R.id.editText1);
+        edittext_input_value = (EditText) findViewById(R.id.data_value);
+      
         
         
         button_send_value.setOnClickListener(new View.OnClickListener() {
@@ -645,6 +650,9 @@ public class DeviceControlActivity extends Activity {
 			public void onClick(View v) {
 				
 				final boolean action_state;
+				
+				Sending_CMD =true;
+				/*
 				read();
 				
                 final int charaProp = characteristic.getProperties();
@@ -669,7 +677,15 @@ public class DeviceControlActivity extends Activity {
                     	
                     	//SendData[0]=SendData[Spin_index];
                     	WriteBytes = edittext_input_value.getText().toString().getBytes();
-                        characteristic.setValue(SendData[Spin_index]);
+                        //characteristic.setValue(SendData[Spin_index]);
+                    	
+                    	for(int i=1;i<13;i++)
+                    	{
+                    		
+                    		
+                    	}
+                    	characteristic.setValue(mArrayList_CANData.get(Spin_index));
+                        
                         mBluetoothLeService.writeCharacteristic(characteristic);
                         
                         Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
@@ -679,7 +695,7 @@ public class DeviceControlActivity extends Activity {
                     mNotifyCharacteristic = characteristic;
                     mBluetoothLeService.setCharacteristicNotification(characteristic, true);
                 }
-                edittext_input_value.setText("");
+                edittext_input_value.setText("");*/
 			}
 		});
         
@@ -690,102 +706,44 @@ public class DeviceControlActivity extends Activity {
 				
 				final boolean action_state;
 				FirewallsPassReq=true;
-				FirewallIndex=0;
-			/*
-			{
-				read();
-				
-                final int charaProp = characteristic.getProperties();
-                
-                //如果该char可写
-                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
-                    // If there is an active notification on a characteristic, clear
-                    // it first so it doesn't update the data field on the user interface.
-                    if (mNotifyCharacteristic != null) {
-                        mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
-                        mNotifyCharacteristic = null;
-                    }
-
-                        //characteristic.setValue(StartCmd);
-                        characteristic.setValue(mArrayList_CANData.get(0));                      
-                        mBluetoothLeService.writeCharacteristic(characteristic);                       
-                        
-                        Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
-             
-                }
-                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                    mNotifyCharacteristic = characteristic;
-                    mBluetoothLeService.setCharacteristicNotification(characteristic, true);
-                }
-                for(int delayCnt=0;delayCnt<2000;delayCnt++);
-			}*/
+				FirewallIndex=0;		
                 
                 edittext_input_value.setText("");
 			}
 		});
        
         
-button_CAN_config.setOnClickListener(new View.OnClickListener() {
-			
-			@Override
-			public void onClick(View v) {
-				
-				final boolean action_state;
-				read();
-				
-                final int charaProp = characteristic.getProperties();
-                
-                //如果该char可写
-                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
-                    // If there is an active notification on a characteristic, clear
-                    // it first so it doesn't update the data field on the user interface.
-                    if (mNotifyCharacteristic != null) {
-                        mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
-                        mNotifyCharacteristic = null;
-                    }
 
-                        characteristic.setValue(SendCAN_Config);
-                        mBluetoothLeService.writeCharacteristic(characteristic);
-                        Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
-             
-                }
-                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                    mNotifyCharacteristic = characteristic;
-                    mBluetoothLeService.setCharacteristicNotification(characteristic, true);
-                }
-                edittext_input_value.setText("");
-			}
-		});
         
 CheckBox1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){ 
     @Override 
     public void onCheckedChanged(CompoundButton buttonView, 
             boolean isChecked) { 
-        // TODO Auto-generated method stub 
-        if(isChecked){ 
-           // editText1.setText(buttonView.getText()+"选中"); 
-        	
-        	ReceiveCAN_Config[1]=(byte) 0x01;
-        	ReceiveCAN_Config[5]=(byte) (ReceiveID1&0xFF);
-        	ReceiveCAN_Config[4]=(byte) ((ReceiveID1>>8)&0xFF);
-        	ReceiveCAN_Config[3]=(byte) ((ReceiveID1>>16)&0xFF);
-        	ReceiveCAN_Config[2]=(byte) ((ReceiveID1>>24)&0xFF);
-            characteristic.setValue(ReceiveCAN_Config);
-            mBluetoothLeService.writeCharacteristic(characteristic);
-        	
-        }else{ 
-            //editText1.setText(buttonView.getText()+"取消选中"); 
- 
-        	ReceiveCAN_Config[1]=(byte) 0x01;
-        	ReceiveCAN_Config[5]=(byte) 0x00;
-        	ReceiveCAN_Config[4]=(byte) 0x00;
-        	ReceiveCAN_Config[3]=(byte) 0x00;
-        	ReceiveCAN_Config[2]=(byte) 0x00;
-        	characteristic.setValue(ReceiveCAN_Config);
-            mBluetoothLeService.writeCharacteristic(characteristic);
-        } 
-    } 
-});       
+						        // TODO Auto-generated method stub 
+						        if(isChecked){ 
+						           // editText1.setText(buttonView.getText()+"选中"); 
+						        	/*
+						        	ReceiveCAN_Config[1]=(byte) 0x01;
+						        	ReceiveCAN_Config[5]=(byte) (ReceiveID1&0xFF);
+						        	ReceiveCAN_Config[4]=(byte) ((ReceiveID1>>8)&0xFF);
+						        	ReceiveCAN_Config[3]=(byte) ((ReceiveID1>>16)&0xFF);
+						        	ReceiveCAN_Config[2]=(byte) ((ReceiveID1>>24)&0xFF);*/
+						            characteristic.setValue(ReceiveCAN_Config);
+						            mBluetoothLeService.writeCharacteristic(characteristic);
+						        	
+						        }else{ 
+						            //editText1.setText(buttonView.getText()+"取消选中"); 
+						 /*
+						        	ReceiveCAN_Config[1]=(byte) 0x01;
+						        	ReceiveCAN_Config[5]=(byte) 0x00;
+						        	ReceiveCAN_Config[4]=(byte) 0x00;
+						        	ReceiveCAN_Config[3]=(byte) 0x00;
+						        	ReceiveCAN_Config[2]=(byte) 0x00;*/
+						        	characteristic.setValue(ReceiveCAN_Config);
+						            mBluetoothLeService.writeCharacteristic(characteristic);
+						        } 
+						    } 
+						});       
         
         
         getActionBar().setTitle(mDeviceName);
@@ -794,116 +752,9 @@ CheckBox1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
     }
     
-    /*diaglog start*/
-    public void alert_edit(View view){
-    	LayoutInflater factory = LayoutInflater.from(this);
-    	
-    	
-    	//final TextView editT_DisplaySignaValue = (TextView) findViewById(R.id.textView5);
-    	
-        final View textEntryView = factory.inflate(R.layout.diag_layout, null); 
-        
-        final EditText editT_ReceiveID = (EditText) textEntryView.findViewById(R.id.editT_ReceiveID); 
-        final EditText editT_StartBit = (EditText)textEntryView.findViewById(R.id.editT_StartBit); 
-        final EditText editT_SigLength = (EditText) textEntryView.findViewById(R.id.editT_SigLength); 
-        final EditText editT_reslouation = (EditText)textEntryView.findViewById(R.id.editT_reslouation);         
-        final EditText editT_Offset = (EditText) textEntryView.findViewById(R.id.editT_Offset); 
-        final EditText EditT_SignalName = (EditText)textEntryView.findViewById(R.id.EditT_SignalName);
-        
-        AlertDialog.Builder ad1 = new AlertDialog.Builder(this); 
-        ad1.setTitle("信号定义:"); 
-        ad1.setIcon(android.R.drawable.ic_dialog_info); 
-        ad1.setView(textEntryView); 
-        ad1.setPositiveButton("是", new DialogInterface.OnClickListener() { 
-            public void onClick(DialogInterface dialog, int i) { 
-                   
-                Log.i("111111", editT_ReceiveID.getText().toString()); 
-                
-           /*receive the info from the alert diaglog*/
-                signal_ReceiveID=editT_ReceiveID.getText().toString();
-                signal_StartBit=editT_StartBit.getText().toString();
-                signal_SigLength=editT_SigLength.getText().toString();
-                signal_reslouation=editT_reslouation.getText().toString();                
-                signal_Offset=editT_Offset.getText().toString();
-                signal_Name = EditT_SignalName.getText().toString();
-                
-                
-                received_ID= dataconvert.DataStr2Integer(signal_ReceiveID); // convert the text to integer
-                 received_StartBit= dataconvert.DataStr2Decmial(signal_StartBit);
-                 received_SigLength= dataconvert.DataStr2Decmial(signal_SigLength);
-                 received_reslouation= dataconvert.DataStr2Double(signal_reslouation);// need floating type
-                 received_Offset= dataconvert.DataStr2Decmial(signal_Offset);
-               
-                
-				editT_DisplaySignalName.setText(signal_Name);
-				ReceiveIDConfig1_checked = true;
-   
-            } 
-        }); 
-        ad1.setNegativeButton("否", new DialogInterface.OnClickListener() { 
-            public void onClick(DialogInterface dialog, int i) { 
-   
-            } 
-        }); 
-        ad1.show();// 显示对话框
 
-    }
     
-    /*diaglog start*/
-    public void alert_edit2(View view){
-    	LayoutInflater factory = LayoutInflater.from(this);
-    	
-    	//final TextView editT_DisplaySignalName = (TextView) findViewById(R.id.textView4);
-    	final TextView editT_DisplaySignalName2 = (TextView) findViewById(R.id.TextView05);
-    	
-        final View textEntryView = factory.inflate(R.layout.diag_layout2, null); 
-        
-        final EditText editT_ReceiveID = (EditText) textEntryView.findViewById(R.id.editT_ReceiveID); 
-        final EditText editT_StartBit = (EditText)textEntryView.findViewById(R.id.editT_StartBit); 
-        final EditText editT_SigLength = (EditText) textEntryView.findViewById(R.id.editT_SigLength); 
-        final EditText editT_reslouation = (EditText)textEntryView.findViewById(R.id.editT_reslouation);         
-        final EditText editT_Offset = (EditText) textEntryView.findViewById(R.id.editT_Offset); 
-        final EditText EditT_SignalName = (EditText)textEntryView.findViewById(R.id.EditT_SignalName);
-        
-        AlertDialog.Builder ad1 = new AlertDialog.Builder(this); 
-        ad1.setTitle("信号定义:"); 
-        ad1.setIcon(android.R.drawable.ic_dialog_info); 
-        ad1.setView(textEntryView); 
-        ad1.setPositiveButton("是", new DialogInterface.OnClickListener() { 
-            public void onClick(DialogInterface dialog, int i) { 
-                   
-                Log.i("111111", editT_ReceiveID.getText().toString()); 
-                
-           /*receive the info from the alert diaglog*/
-                signal_ReceiveID_2=editT_ReceiveID.getText().toString();
-                signal_StartBit_2=editT_StartBit.getText().toString();
-                signal_SigLength_2=editT_SigLength.getText().toString();
-                signal_reslouation_2=editT_reslouation.getText().toString();                
-                signal_Offset_2=editT_Offset.getText().toString();
-                signal_Name_2 = EditT_SignalName.getText().toString();
-                
-                
-                received_ID_2= dataconvert.DataStr2Integer(signal_ReceiveID); // convert the text to integer
-                 received_StartBit_2= dataconvert.DataStr2Decmial(signal_StartBit);
-                 received_SigLength_2= dataconvert.DataStr2Decmial(signal_SigLength);
-                 received_reslouation_2= dataconvert.DataStr2Double(signal_reslouation);// need floating type
-                 received_Offset_2= dataconvert.DataStr2Decmial(signal_Offset);
-               
-                
-				editT_DisplaySignalName2.setText(signal_Name);
-                
-   
-            } 
-        }); 
-        ad1.setNegativeButton("否", new DialogInterface.OnClickListener() { 
-            public void onClick(DialogInterface dialog, int i) { 
-   
-            } 
-        }); 
-        ad1.show();// 显示对话框
-
-    }
-    /*diaglog end*/
+  
     
   /*  
     private int DataStr2Hex(String data) {
@@ -1081,12 +932,14 @@ CheckBox1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(
     
     private void displayValueData1(int data) {
     	
-    	valuediaplay1.setText(" "+data);
+    	valuediaplay[0].setText(" "+data);
     }
+    
+
 
 private void displayValueData1(String data) {
     	
-    	valuediaplay1.setText(data);
+	valuediaplay[0].setText(data);
     }
 
 private void displayValueData2(int data) {
@@ -1098,6 +951,18 @@ private void displayValueData2(String data) {
 	
 	valuediaplay2.setText(data);
 }
+
+
+private void displayValueData(int data,int index,TextView[] view) {
+	
+	view[index].setText(" "+data);
+}
+
+private void displayValueData(String data,int index,TextView[] view) {
+	
+	view[index].setText(" "+data);
+}
+
 
     private static IntentFilter makeGattUpdateIntentFilter() {
         final IntentFilter intentFilter = new IntentFilter();
@@ -1121,7 +986,7 @@ private void displayValueData2(String data) {
   //给CheckBox设置事件监听 
     
 
-
+    
 
     
 }
