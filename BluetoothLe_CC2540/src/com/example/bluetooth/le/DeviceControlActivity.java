@@ -108,7 +108,7 @@ public class DeviceControlActivity extends Activity {
     //private TextView editT_DisplaySignalName2;
     //private TextView editT_DisplaySignalName3;
     
-    private CheckBox CheckBox1=null;
+    private CheckBox CheckBox1=null,ReceiveID_CheckBox1=null,ReceiveID_CheckBox2=null,ReceiveID_CheckBox3=null;
     
     private BluetoothLeService mBluetoothLeService;
   
@@ -208,6 +208,7 @@ public class DeviceControlActivity extends Activity {
    int Column_Excel_Sheet0,Column_Excel_Sheet1,Column_Excel_Sheet2,Column_Excel_Sheet_Receive;
    int Row_Excel_Sheet0,Row_Excel_Sheet1,Row_Excel_Sheet_Receive;
    List<byte[]> mArrayList_CANData,mArrayList_Receive_Var,mArrayList_CANData_MultiFrame;
+   int[] Receive_ID_Var; 
    List<String> mArrayList_Receive_SignalName;
    
    ArrayList<String> signal_name_Array;
@@ -219,8 +220,9 @@ public class DeviceControlActivity extends Activity {
    private Timer drawTimer = new Timer();
    private TimerTask drawTask;
    boolean FirewallsPassReq;
+   boolean KeepServiceAlive;
    int FirewallIndex;
-   int SendingCmd_Index,SendingCmd_Index_Max;
+   int SendingCmd_Index,SendingCmd_Index_Max,KeepAlive_Index;
     /***********end of Add Spinner*******************/
 
     // 管理服务的生命周期
@@ -314,37 +316,19 @@ public class DeviceControlActivity extends Activity {
 
             	if(received_ID ==1225  &&  data_B[1]==(byte)0x81)
             	{
-	            	//if(checkbox1_checked ==true && received_ID ==firstByte  &&  data_B[1]==(byte)0x81)
-	            	//{
+	            	
 	                	convertData = dataconvert.DataStramp(data_B,received_StartBit,  received_SigLength);
 	                 	System.out.println("convertData----" + convertData);
 	                 	
 	            		data_CAN =(int) (convertData-received_Offset);
 	            		
 	            		phsValue_FromCAN=(double)data_CAN*received_reslouation;
-	            		DecimalFormat df=new DecimalFormat(".##");
-	            		//String st=df.format(phsValue_FromCAN);
-	            		//displayValueData1(Double.toString(phsValue_FromCAN));
+	            		DecimalFormat df=new DecimalFormat(".##");	            		
 	            		displayValueData1(df.format(phsValue_FromCAN));
 	            		displayValueData(df.format(phsValue_FromCAN),1,valuediaplay);
-	            		//displayData("ID "+ Integer.toHexString(firstByte)+" received");
-	            		//displayData("ID_0x"+ Integer.toHexString(firstByte)+":"+DataHexStr+" received");
-	            		//displayData(signal_Name+ "="+ data_CAN);
-	            		
-	            		//received_Offset
-	            	//} 
-	            		/*
-	            	else if(checkbox1_checked == false)
-	            	{    if(ID_Config_reminder==false)
-			            	{
-			            		displayData("Please set the receive 1 to Enable");
-			            		ID_Config_reminder = true;
-			            	}
-	            		displayValueData1("invalid");
-	            	}*/
+	        
             	}
-            	//else
-            	//{displayData("Data received but no display requirement");}
+            	
             	
             	if(received_ID_2 ==firstByte  &&  data_B[1]==(byte)0x82)
             	{
@@ -408,6 +392,9 @@ public class DeviceControlActivity extends Activity {
         valuediaplay[1]= (TextView) findViewById(R.id.Receive_Value_02);
         valuediaplay[2]= (TextView) findViewById(R.id.Receive_Value_03);
         
+        ReceiveID_CheckBox1=(CheckBox)findViewById(R.id.Receive_CheckBox01);
+        ReceiveID_CheckBox2=(CheckBox)findViewById(R.id.Receive_CheckBox02);
+        ReceiveID_CheckBox3=(CheckBox)findViewById(R.id.Receive_CheckBox03);
         /*保持屏幕常亮*/
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         
@@ -421,7 +408,7 @@ public class DeviceControlActivity extends Activity {
          //刷新图表
         	if(FirewallsPassReq==true)
         	{
-        		
+        		KeepAlive_Index=0;
         		//updateChart();
         			read();
     				
@@ -458,7 +445,7 @@ public class DeviceControlActivity extends Activity {
         	}
         	if(Sending_CMD==true &&Sending_Frame==true)
         		
-        	{
+        	{	KeepAlive_Index=0;
         		read();
 				
                 final int charaProp = characteristic.getProperties();
@@ -493,6 +480,46 @@ public class DeviceControlActivity extends Activity {
         		}
         		
         	}
+        	if(KeepServiceAlive==true)
+        	{
+/*
+        		read();
+				
+                final int charaProp = characteristic.getProperties();
+                
+                //如果该char可写
+                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                    // If there is an active notification on a characteristic, clear
+                    // it first so it doesn't update the data field on the user interface.
+                    if (mNotifyCharacteristic != null) {
+                        mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
+                        mNotifyCharacteristic = null;
+                    }
+
+                        //characteristic.setValue(StartCmd);
+                       // characteristic.setValue(mArrayList_CANData.get(0));                      
+                       // mBluetoothLeService.writeCharacteristic(characteristic);                       
+                        
+                        Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
+             
+                }
+                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                    mNotifyCharacteristic = characteristic;
+                    mBluetoothLeService.setCharacteristicNotification(characteristic, true);
+                }
+                */
+                KeepAlive_Index++;
+        		if(KeepAlive_Index>=40)
+        		{
+        			KeepAlive_Index=0;
+        			characteristic.setValue(mArrayList_CANData.get(0));                      
+                    mBluetoothLeService.writeCharacteristic(characteristic);  
+        		}
+        		
+        	
+        		
+        	}
+        	
          super.handleMessage(msg);
         }
         };
@@ -506,7 +533,7 @@ public class DeviceControlActivity extends Activity {
         }
         };
         
-        drawTimer.schedule(drawTask, 10, 100);
+        drawTimer.schedule(drawTask, 10, 50);
         
         
         /*处理Excel数据*/
@@ -546,9 +573,15 @@ public class DeviceControlActivity extends Activity {
         
         Column_Excel_Sheet_Receive=OsExcel.Getcolumns();
         Row_Excel_Sheet_Receive = OsExcel.Getrows();
+        int ID_Hex=0;
+        Receive_ID_Var = new int[Row_Excel_Sheet_Receive];
         for(int row_i=1;row_i<Row_Excel_Sheet_Receive;row_i++)
         {
         	mArrayList_Receive_Row=OsExcel.Getrows_list(mArrayList_Sheet1,row_i,2,6);
+        	ID_Hex= dataconvert.DataStr2Integer(mArrayList_Receive_Row.get(1).substring(2));
+        	Receive_ID_Var[row_i-1]=ID_Hex;
+        	
+        	//mArrayList_Receive_Var.add(ID_Hex);
         	//String SignalName=mArrayList_Receive_Row.get(0);
         	editT_DisplaySignalName[row_i-1].setText(mArrayList_Receive_Row.get(0));
         	//mArrayList_Receive_Var.add(dataconvert.StrToChar_List(mArrayList_Row));        	
@@ -652,50 +685,7 @@ public class DeviceControlActivity extends Activity {
 				final boolean action_state;
 				
 				Sending_CMD =true;
-				/*
-				read();
 				
-                final int charaProp = characteristic.getProperties();
-                
-                //如果该char可写
-                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
-                    // If there is an active notification on a characteristic, clear
-                    // it first so it doesn't update the data field on the user interface.
-                    if (mNotifyCharacteristic != null) {
-                        mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
-                        mNotifyCharacteristic = null;
-                    }
-                    //读取数据，数据将在回调函数中
-                    //mBluetoothLeService.readCharacteristic(characteristic);
-                    byte[] value = new byte[20];
-                    value[0] = (byte) 0x00;
-                    if(edittext_input_value.getText().toString().equals("")){
-                    	Toast.makeText(getApplicationContext(), "请输入！", Toast.LENGTH_SHORT).show();
-                    	return;
-                    }else{
-                    	//WriteBytes[0]=SendComand;Spin_index
-                    	
-                    	//SendData[0]=SendData[Spin_index];
-                    	WriteBytes = edittext_input_value.getText().toString().getBytes();
-                        //characteristic.setValue(SendData[Spin_index]);
-                    	
-                    	for(int i=1;i<13;i++)
-                    	{
-                    		
-                    		
-                    	}
-                    	characteristic.setValue(mArrayList_CANData.get(Spin_index));
-                        
-                        mBluetoothLeService.writeCharacteristic(characteristic);
-                        
-                        Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
-                    }
-                }
-                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                    mNotifyCharacteristic = characteristic;
-                    mBluetoothLeService.setCharacteristicNotification(characteristic, true);
-                }
-                edittext_input_value.setText("");*/
 			}
 		});
         
@@ -721,29 +711,99 @@ CheckBox1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(
             boolean isChecked) { 
 						        // TODO Auto-generated method stub 
 						        if(isChecked){ 
-						           // editText1.setText(buttonView.getText()+"选中"); 
+						           
+						            characteristic.setValue(mArrayList_CANData.get(0));
+						            mBluetoothLeService.writeCharacteristic(characteristic);
+						            KeepServiceAlive=true;
+						        	
+						        }else{ 
+						            //editText1.setText(buttonView.getText()+"取消选中"); 
+						        	KeepServiceAlive=false;
 						        	/*
-						        	ReceiveCAN_Config[1]=(byte) 0x01;
-						        	ReceiveCAN_Config[5]=(byte) (ReceiveID1&0xFF);
-						        	ReceiveCAN_Config[4]=(byte) ((ReceiveID1>>8)&0xFF);
-						        	ReceiveCAN_Config[3]=(byte) ((ReceiveID1>>16)&0xFF);
-						        	ReceiveCAN_Config[2]=(byte) ((ReceiveID1>>24)&0xFF);*/
+						 byte[] temp = new byte[14];
+						 byte[] temp2 = new byte[14];
+						 temp=mArrayList_CANData.get(0);
+						 for(int index_i=0;index_i<14;index_i++)
+						 {
+							 temp2[index_i]=temp[index_i];
+						 }
+						 temp2[1]=(byte) ((byte) temp2[1]|0x80);
+						        	
+						        	characteristic.setValue(temp2);
+						            mBluetoothLeService.writeCharacteristic(characteristic);*/
+						        } 
+						    } 
+						});  
+
+ReceiveID_CheckBox1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){ 
+    @Override 
+    public void onCheckedChanged(CompoundButton buttonView, 
+            boolean isChecked) { 
+						        // TODO Auto-generated method stub
+    							ReceiveCAN_Config[5]=(byte)0x01;
+						       	ReceiveCAN_Config[4]=(byte) (Receive_ID_Var[0]&0xFF);
+						    	ReceiveCAN_Config[3]=(byte) ((Receive_ID_Var[0]>>8)&0xFF);
+						    	ReceiveCAN_Config[2]=(byte) ((Receive_ID_Var[0]>>16)&0xFF);
+						    	ReceiveCAN_Config[1]=(byte) ((Receive_ID_Var[0]>>24)&0xFF);
+						        if(isChecked){ 
+						           
 						            characteristic.setValue(ReceiveCAN_Config);
 						            mBluetoothLeService.writeCharacteristic(characteristic);
 						        	
 						        }else{ 
-						            //editText1.setText(buttonView.getText()+"取消选中"); 
-						 /*
-						        	ReceiveCAN_Config[1]=(byte) 0x01;
-						        	ReceiveCAN_Config[5]=(byte) 0x00;
-						        	ReceiveCAN_Config[4]=(byte) 0x00;
-						        	ReceiveCAN_Config[3]=(byte) 0x00;
-						        	ReceiveCAN_Config[2]=(byte) 0x00;*/
+						    
+						        	ReceiveCAN_Config[5]=(byte) ((byte) ReceiveCAN_Config[5]|0x80);
 						        	characteristic.setValue(ReceiveCAN_Config);
 						            mBluetoothLeService.writeCharacteristic(characteristic);
 						        } 
 						    } 
-						});       
+						});  
+ReceiveID_CheckBox2.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){ 
+    @Override 
+    public void onCheckedChanged(CompoundButton buttonView, 
+            boolean isChecked) { 
+							    	// TODO Auto-generated method stub
+    								ReceiveCAN_Config[5]=(byte)0x02;
+							       	ReceiveCAN_Config[4]=(byte) (Receive_ID_Var[1]&0xFF);
+							    	ReceiveCAN_Config[3]=(byte) ((Receive_ID_Var[1]>>8)&0xFF);
+							    	ReceiveCAN_Config[2]=(byte) ((Receive_ID_Var[1]>>16)&0xFF);
+							    	ReceiveCAN_Config[1]=(byte) ((Receive_ID_Var[1]>>24)&0xFF);
+							        if(isChecked){ 
+							           
+							            characteristic.setValue(ReceiveCAN_Config);
+							            mBluetoothLeService.writeCharacteristic(characteristic);
+							        	
+							        }else{ 
+							    
+							        	ReceiveCAN_Config[5]=(byte) ((byte) ReceiveCAN_Config[5]|0x80);
+							        	characteristic.setValue(ReceiveCAN_Config);
+							            mBluetoothLeService.writeCharacteristic(characteristic);
+							        } 
+						    } 
+						});  
+ReceiveID_CheckBox3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){ 
+    @Override 
+    public void onCheckedChanged(CompoundButton buttonView, 
+            boolean isChecked) { 
+						    	// TODO Auto-generated method stub
+    							ReceiveCAN_Config[5]=(byte)0x03;
+						       	ReceiveCAN_Config[4]=(byte) (Receive_ID_Var[2]&0xFF);
+						    	ReceiveCAN_Config[3]=(byte) ((Receive_ID_Var[2]>>8)&0xFF);
+						    	ReceiveCAN_Config[2]=(byte) ((Receive_ID_Var[2]>>16)&0xFF);
+						    	ReceiveCAN_Config[1]=(byte) ((Receive_ID_Var[2]>>24)&0xFF);
+						        if(isChecked){ 
+						           
+						            characteristic.setValue(ReceiveCAN_Config);
+						            mBluetoothLeService.writeCharacteristic(characteristic);
+						        	
+						        }else{ 
+						    
+						        	ReceiveCAN_Config[5]=(byte) ((byte) ReceiveCAN_Config[5]|0x80);
+						        	characteristic.setValue(ReceiveCAN_Config);
+						            mBluetoothLeService.writeCharacteristic(characteristic);
+						        } 
+						    } 
+						});  
         
         
         getActionBar().setTitle(mDeviceName);
@@ -751,48 +811,8 @@ CheckBox1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
     }
-    
-
-    
-  
-    
-  /*  
-    private int DataStr2Hex(String data) {
-    	
-    	int value=0,temp_Value2=0,temp_Value=0,char_length=0,loop_i=0;
-    	char[] string2char={0,0,0,0,0,0,0,0};
-    	byte[] signal_Char2byte={0,0,0,0,0,0,0,0};
-        if (data != null) {
-        	
-        	 char[] signal_string2char = data.toCharArray();
-             char_length = signal_string2char.length;
-             
-             for(loop_i=0;loop_i<char_length;loop_i++)
-             {        
-            	
-	             signal_Char2byte[loop_i]=(byte) signal_string2char[loop_i];
-	             if(signal_Char2byte[loop_i]>=48&&signal_Char2byte[loop_i]<=57)
-	             {
-	            	 temp_Value = signal_Char2byte[loop_i]-48;
-	             } 
-	             else if(signal_Char2byte[loop_i]>=97&&signal_Char2byte[loop_i]<=102)
-	             {temp_Value = signal_Char2byte[loop_i]-97+10;}
-	             else if(signal_Char2byte[loop_i]>=65&&signal_Char2byte[loop_i]<=70)
-	             {temp_Value = signal_Char2byte[loop_i]-65+10;}
-	             
-	             temp_Value2=temp_Value<<(4*(char_length-loop_i-1));
-	             
-	             value = value+ temp_Value2;
-	             
-	             }
-                            
-             	
-        	
-             
-            	}
-		return value;
-    }
-*/
+ 
+ 
     /*
 	 * **************************************************************
 	 * *****************************读函数*****************************
@@ -872,37 +892,7 @@ CheckBox1.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(
         	mLogInfor.append(data+"\n");
         	
 			mscrollView.scrollBy(0, 30);
-        	//mscrollView.scrollTo(0, mLogInfor.getBottom());
-        	//scroll2Bottom(mscrollView,mLogInfor);
-        	//mscrollView.scrollTo(0, 20); 
-        	//Handler mHandler = new Handler();
-        	//mscrollView.fullScroll(ScrollView.FOCUS_DOWN);
-        	/*
-        	mHandler.post(new Runnable() {
-            	public void run() {
-            		mscrollView.fullScroll(ScrollView.FOCUS_DOWN);
-            		}
-             }); 	*/
-        	/*mscrollView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                    @Override
-                    public void onGlobalLayout() {
-                    	mscrollView.post(new Runnable() {
-                            public void run() {
-                            	mscrollView.fullScroll(View.FOCUS_DOWN);
-                            }
-                        });
-                    }
-                    */
-               
-  
         	
-        	
-
-           // loginfo[0]=data;
-           // loginfo[1]=data;
-           // loginfo[2]=data;
-            //mDataField.setText( loginfo[0]+loginfo[1]+loginfo[2]);
-            //mLogInfor.setText("\n");
     }
     }
     

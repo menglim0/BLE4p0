@@ -44,13 +44,13 @@ public final class R {
         public static final int SignalName_01=0x7f090014;
         public static final int SignalName_02=0x7f090017;
         public static final int SignalName_03=0x7f09001a;
-        public static final int Start_button=0x7f09000d;
+        public static final int Start_button=0x7f09000f;
         public static final int TextView01=0x7f09000a;
         public static final int button_send_value=0x7f090011;
-        public static final int checkBox1=0x7f09000c;
-        public static final int connection_state=0x7f09000f;
+        public static final int checkBox1=0x7f09000e;
+        public static final int connection_state=0x7f09000d;
         public static final int data_value=0x7f090010;
-        public static final int device_address=0x7f09000e;
+        public static final int device_address=0x7f09000c;
         public static final int device_name=0x7f09001e;
         public static final int editT_Offset=0x7f090009;
         public static final int editT_ReceiveID=0x7f090001;

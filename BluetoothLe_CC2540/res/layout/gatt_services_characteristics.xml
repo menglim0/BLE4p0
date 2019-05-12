@@ -32,8 +32,7 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textAlignment="viewStart" >
+                android:layout_height="wrap_content">               
 
                 <LinearLayout
                     android:layout_width="434dp"
@@ -204,7 +203,7 @@
                         android:id="@+id/SignalName_02"
                         android:layout_width="120dp"
                         android:layout_height="fill_parent"
-                        android:layout_weight="0.70"
+                        android:layout_weight="1"
                         android:gravity="center"
                         android:text="SignalName"
                         android:textSize="20sp" />
@@ -213,10 +212,12 @@
                         android:id="@+id/Receive_Value_02"
                         android:layout_width="360dp"
                         android:layout_height="fill_parent"
+                        android:layout_weight="0.72"
                         android:background="@drawable/edit_style"
                         android:gravity="center"
                         android:text="Value"
                         android:textSize="20sp" />
+
                 </LinearLayout>
 
                 <LinearLayout
@@ -234,13 +235,14 @@
                         android:id="@+id/SignalName_03"
                         android:layout_width="298dp"
                         android:layout_height="fill_parent"
+                        android:layout_weight="0.43"
                         android:gravity="center"
                         android:text="SignalName"
                         android:textSize="20sp" />
 
                     <TextView
                         android:id="@+id/Receive_Value_03"
-                        android:layout_width="match_parent"
+                        android:layout_width="486dp"
                         android:layout_height="fill_parent"
                         android:gravity="center"
                         android:text="Value"
