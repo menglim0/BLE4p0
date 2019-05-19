@@ -1,6 +1,7 @@
 package com.example.bluetooth.le;
 
 import  java.lang.String;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -322,6 +323,19 @@ public static byte[] StrToChar_List(List<String> list) {
     //CAN_Date.add(b);
 
     return c; 
+}
+
+
+public static double Data2Unpack(byte[] data_B,int index,int ID,byte Startbit,byte Length,byte Offset,double resoluation) {
+	double value= 0;
+	long convertData=0;
+	int data_CAN=0;
+	convertData = DataStramp(data_B,Startbit, Length);
+ 	System.out.println("convertData----" + convertData); 	
+	data_CAN =(int) (convertData-Offset);	
+	value=(double)data_CAN*resoluation;	
+	
+	return value;
 }
 
 }

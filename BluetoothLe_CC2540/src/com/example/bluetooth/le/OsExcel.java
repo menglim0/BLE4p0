@@ -66,6 +66,16 @@ public class OsExcel{
         byte multframe;
      
     }
+    
+    static class CAN_Receive_Var{
+        int ID;
+        byte StartBit;
+        byte SigLength;
+        double reslouation;
+        byte Offset;
+        String content;
+    }
+    
   
     private void UpdateExcel(String fname){
     	fname="/"+fname;
@@ -221,6 +231,24 @@ public class OsExcel{
 		
 		return CAN_Send_CMD;
     }
+    
+    static List GetReceive_var(List list,int rows,int Total_Row,int Total_Colum){
+       	List rows_list= new ArrayList();        	
+
+		String signal_name;
+		
+		CAN_Receive_Var temp_Var;
+		
+		int i;
+		
+		for(i=0;i<Total_Colum;i++)
+		{
+			//temp_Var.ID = (int) list.get(i);			
+			//rows_list.add(temp_Var);
+		}
+        return rows_list;
+    }
+    
     
 }
 

@@ -25,6 +25,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
+import com.example.bluetooth.le.OsExcel.CAN_Receive_Var;
 import com.example.bluetooth.le.OsExcel.CurCell;
 
 import jxl.Cell;
@@ -211,6 +212,10 @@ public class DeviceControlActivity extends Activity {
    int[] Receive_ID_Var; 
    List<String> mArrayList_Receive_SignalName;
    
+   CAN_Receive_Var CAN_Receive_Unpack;
+   private List<CAN_Receive_Var> Unpack_Array;
+   
+   
    ArrayList<String> signal_name_Array;
    
    List<String> mArrayList_Row;
@@ -301,6 +306,7 @@ public class DeviceControlActivity extends Activity {
             	
             	//data_CAN=data_B[7]&0xff,
             	int data_CAN=0;
+            	int display_index=0;
             	long convertData;
             	double phsValue_FromCAN;
             //	byte tempdata = (byte) 0x81;
@@ -311,10 +317,27 @@ public class DeviceControlActivity extends Activity {
             	
             	for(int index=0;index<3;index++)
             	{
-            		displayValueData(index,index,valuediaplay);
+            		if(Unpack_Array.get(index).ID ==firstByte)
+            		{
+            			display_index=index;
+            			if(data_B[1]==(byte)0x81)
+            			{
+            			double value_CAN=dataconvert.Data2Unpack(   data_B,
+									            					index,
+									            					Unpack_Array.get(index).ID,
+									            					Unpack_Array.get(index).StartBit,
+									            					Unpack_Array.get(index).SigLength,
+									            					Unpack_Array.get(index).Offset,
+									            					Unpack_Array.get(index).reslouation);
+            			
+                        	DecimalFormat df=new DecimalFormat(".##");	            		
+                    		//displayValueData1(df.format(phsValue_FromCAN));
+                    		displayValueData(df.format(value_CAN),index,valuediaplay);
+            			}
+            		}            		
             	}
-
-            	if(received_ID ==1225  &&  data_B[1]==(byte)0x81)
+/*
+            	if(Unpack_Array.get(0).ID ==firstByte  &&  data_B[1]==(byte)0x81)
             	{
 	            	
 	                	convertData = dataconvert.DataStramp(data_B,received_StartBit,  received_SigLength);
@@ -323,13 +346,19 @@ public class DeviceControlActivity extends Activity {
 	            		data_CAN =(int) (convertData-received_Offset);
 	            		
 	            		phsValue_FromCAN=(double)data_CAN*received_reslouation;
-	            		DecimalFormat df=new DecimalFormat(".##");	            		
-	            		displayValueData1(df.format(phsValue_FromCAN));
-	            		displayValueData(df.format(phsValue_FromCAN),1,valuediaplay);
+	            		//DecimalFormat df=new DecimalFormat(".##");	            		
+	            		//displayValueData1(df.format(phsValue_FromCAN));
+	            		//displayValueData(df.format(phsValue_FromCAN),0,valuediaplay);
 	        
-            	}
-            	
-            	
+            	}*/
+            	//Data2Unpack(byte[] data_B,int index,int ID,byte Startbit,byte Length,byte Offset,double resoluation)
+            	/*
+            	double value_CAN=dataconvert.Data2Unpack(data_B,0,Unpack_Array.get(0).ID,Unpack_Array.get(0).StartBit,Unpack_Array.get(0).SigLength,Unpack_Array.get(0).Offset,Unpack_Array.get(0).reslouation);
+            	DecimalFormat df=new DecimalFormat(".##");	            		
+        		//displayValueData1(df.format(phsValue_FromCAN));
+        		displayValueData(df.format(value_CAN),0,valuediaplay);
+        		*/
+        		/*
             	if(received_ID_2 ==firstByte  &&  data_B[1]==(byte)0x82)
             	{
             		data_CAN =data_CAN-received_Offset;
@@ -343,7 +372,7 @@ public class DeviceControlActivity extends Activity {
             	{
             		displayData(signal_ReceiveID_2+" can't receive in list 2");
             		displayValueData2("invalid");
-            	}
+            	}*/
       
  
             }
@@ -436,7 +465,7 @@ public class DeviceControlActivity extends Activity {
                     }
                     
                     FirewallIndex++;
-            		if(FirewallIndex>=5)
+            		if(FirewallIndex>=6)
             		{
             			FirewallIndex=0;
             			FirewallsPassReq=false;
@@ -575,13 +604,22 @@ public class DeviceControlActivity extends Activity {
         Row_Excel_Sheet_Receive = OsExcel.Getrows();
         int ID_Hex=0;
         Receive_ID_Var = new int[Row_Excel_Sheet_Receive];
+        
+        
+        Unpack_Array=new ArrayList<CAN_Receive_Var>();
         for(int row_i=1;row_i<Row_Excel_Sheet_Receive;row_i++)
         {
+        	CAN_Receive_Unpack = new CAN_Receive_Var();
         	mArrayList_Receive_Row=OsExcel.Getrows_list(mArrayList_Sheet1,row_i,2,6);
         	ID_Hex= dataconvert.DataStr2Integer(mArrayList_Receive_Row.get(1).substring(2));
         	Receive_ID_Var[row_i-1]=ID_Hex;
         	
-        	//mArrayList_Receive_Var.add(ID_Hex);
+        	CAN_Receive_Unpack.ID=dataconvert.DataStr2Integer(mArrayList_Receive_Row.get(1).substring(2));;
+        	CAN_Receive_Unpack.StartBit= (byte) dataconvert.DataStr2Decmial(mArrayList_Receive_Row.get(2));
+        	CAN_Receive_Unpack.SigLength= (byte) dataconvert.DataStr2Decmial(mArrayList_Receive_Row.get(3));
+        	CAN_Receive_Unpack.reslouation= dataconvert.DataStr2Double(mArrayList_Receive_Row.get(4));// need floating type
+        	CAN_Receive_Unpack.Offset= (byte) dataconvert.DataStr2Decmial(mArrayList_Receive_Row.get(5));
+        	Unpack_Array.add(CAN_Receive_Unpack);
         	//String SignalName=mArrayList_Receive_Row.get(0);
         	editT_DisplaySignalName[row_i-1].setText(mArrayList_Receive_Row.get(0));
         	//mArrayList_Receive_Var.add(dataconvert.StrToChar_List(mArrayList_Row));        	
