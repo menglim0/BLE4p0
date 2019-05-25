@@ -144,8 +144,19 @@ public class DeviceControlActivity extends Activity {
 					    {0x10,(byte)0xDB,(byte)0xFE,(byte)0xF1,0x04,0x14,(byte)0xFF,(byte)0xFF,(byte)0xFF,0x00,0x00,0x00,0x00,0x00}
 					    };
    
-   byte[] StartCmd = {(byte)0xFF,(byte)0x01,(byte)0xE1,(byte)0xF1,0x02,0x3E,(byte)0x80,(byte)0xFF,0x00,0x00,0x00,0x00,0x00,0x00};
+   byte[] StartCmd = { 					   
+					   (byte)0xE6,0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x22,0x20,0x00,0x00,0x00,0x00,0x00,0x00,0x06
+					   };
    
+   byte[] StartCmd_Backup = { (byte)0xE6,0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x10,0x03,0x00,0x00,0x00,0x00,0x00,0x01,
+		   (byte)0xE6,0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x27,0x09,0x00,0x00,0x00,0x00,0x00,0x02,
+		   (byte)0xE6,0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x30,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x03,
+		   (byte)0xE6,0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x10,0x0E,0x27,0x0A,0x00,0x00,0x00,0x00,0x04,
+		   (byte)0xE6,0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x21,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x05,					   
+		   (byte)0xE6,0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x22,0x20,0x00,0x00,0x00,0x00,0x00,0x00,0x06
+		   };
+   
+			   
    byte[] CAN_init_Cmd = {(byte)0xEA,(byte)0x01,(byte)0x00,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00};
    
    byte[] SendCAN_Config = {(byte)0xEA,(byte)0x01,(byte)0x00,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00};							   
@@ -224,7 +235,7 @@ public class DeviceControlActivity extends Activity {
    private Handler Drawhandler;
    private Timer drawTimer = new Timer();
    private TimerTask drawTask;
-   boolean FirewallsPassReq;
+   boolean FirewallsPassReq,FirewallsPassReq_init;
    boolean KeepServiceAlive;
    int FirewallIndex;
    int SendingCmd_Index,SendingCmd_Index_Max,KeepAlive_Index;
@@ -430,139 +441,7 @@ public class DeviceControlActivity extends Activity {
         /**/
       //这里的Handler实例将配合下面的Timer实例，完成定时更新图表的功能
         
-        Drawhandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) 
-        {
-         //刷新图表
-        	if(FirewallsPassReq==true)
-        	{
-        		KeepAlive_Index=0;
-        		//updateChart();
-        			read();
-    				
-                    final int charaProp = characteristic.getProperties();
-                    
-                    //如果该char可写
-                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
-                        // If there is an active notification on a characteristic, clear
-                        // it first so it doesn't update the data field on the user interface.
-                        if (mNotifyCharacteristic != null) {
-                            mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
-                            mNotifyCharacteristic = null;
-                        }
-
-                            //characteristic.setValue(StartCmd);
-                            characteristic.setValue(mArrayList_CANData.get(FirewallIndex+2));                      
-                            mBluetoothLeService.writeCharacteristic(characteristic);                       
-                            
-                            Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
-                 
-                    }
-                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                        mNotifyCharacteristic = characteristic;
-                        mBluetoothLeService.setCharacteristicNotification(characteristic, true);
-                    }
-                    
-                    FirewallIndex++;
-            		if(FirewallIndex>=6)
-            		{
-            			FirewallIndex=0;
-            			FirewallsPassReq=false;
-            		}
-        		
-        	}
-        	if(Sending_CMD==true &&Sending_Frame==true)
-        		
-        	{	KeepAlive_Index=0;
-        		read();
-				
-                final int charaProp = characteristic.getProperties();
-                
-                //如果该char可写
-                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
-                    // If there is an active notification on a characteristic, clear
-                    // it first so it doesn't update the data field on the user interface.
-                    if (mNotifyCharacteristic != null) {
-                        mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
-                        mNotifyCharacteristic = null;
-                    }
-
-                        //characteristic.setValue(StartCmd);
-                        characteristic.setValue(mArrayList_CANData_MultiFrame.get(SendingCmd_Index));                      
-                        mBluetoothLeService.writeCharacteristic(characteristic);                       
-                        
-                        Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
-             
-                }
-                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                    mNotifyCharacteristic = characteristic;
-                    mBluetoothLeService.setCharacteristicNotification(characteristic, true);
-                }
-                
-                SendingCmd_Index++;
-        		if(SendingCmd_Index>=SendingCmd_Index_Max)
-        		{
-        			SendingCmd_Index=0;
-        			Sending_CMD=false;
-        			Sending_Frame=false;
-        		}
-        		
-        	}
-        	if(KeepServiceAlive==true)
-        	{
-/*
-        		read();
-				
-                final int charaProp = characteristic.getProperties();
-                
-                //如果该char可写
-                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
-                    // If there is an active notification on a characteristic, clear
-                    // it first so it doesn't update the data field on the user interface.
-                    if (mNotifyCharacteristic != null) {
-                        mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
-                        mNotifyCharacteristic = null;
-                    }
-
-                        //characteristic.setValue(StartCmd);
-                       // characteristic.setValue(mArrayList_CANData.get(0));                      
-                       // mBluetoothLeService.writeCharacteristic(characteristic);                       
-                        
-                        Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
-             
-                }
-                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                    mNotifyCharacteristic = characteristic;
-                    mBluetoothLeService.setCharacteristicNotification(characteristic, true);
-                }
-                */
-                KeepAlive_Index++;
-        		if(KeepAlive_Index>=40)
-        		{
-        			KeepAlive_Index=0;
-        			characteristic.setValue(mArrayList_CANData.get(0));                      
-                    mBluetoothLeService.writeCharacteristic(characteristic);  
-        		}
-        		
-        	
-        		
-        	}
-        	
-         super.handleMessage(msg);
-        }
-        };
         
-        drawTask = new TimerTask() {
-        @Override
-        public void run() {
-        Message message = new Message();
-            message.what = 1;
-            Drawhandler.sendMessage(message);
-        }
-        };
-        
-        drawTimer.schedule(drawTask, 10, 50);
         
         
         /*处理Excel数据*/
@@ -848,6 +727,144 @@ ReceiveID_CheckBox3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChang
         getActionBar().setDisplayHomeAsUpEnabled(true);
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+
+        //FirewallsPassReq_init=true;
+
+
+		Drawhandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) 
+        {
+         //刷新图表||FirewallsPassReq_init==true
+        	if(FirewallsPassReq==true||FirewallsPassReq_init==true)
+        	{
+        		KeepAlive_Index=0;
+        		//updateChart();
+        			read();
+    				
+                    final int charaProp = characteristic.getProperties();
+                    
+                    //如果该char可写
+                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                        // If there is an active notification on a characteristic, clear
+                        // it first so it doesn't update the data field on the user interface.
+                        if (mNotifyCharacteristic != null) {
+                            mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
+                            mNotifyCharacteristic = null;
+                        }
+
+                            characteristic.setValue(StartCmd);
+                           // characteristic.setValue(mArrayList_CANData.get(FirewallIndex+2));                      
+                            mBluetoothLeService.writeCharacteristic(characteristic);                       
+                            
+                            Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
+                 
+                    }
+                    if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                        mNotifyCharacteristic = characteristic;
+                        mBluetoothLeService.setCharacteristicNotification(characteristic, true);
+                    }
+                    
+                   // FirewallIndex++;
+            		//if(FirewallIndex>=6)
+            		//{
+            			FirewallIndex=0;
+            			FirewallsPassReq=false;
+            			FirewallsPassReq_init=false;
+            		//}
+        		
+        	}
+        	if(Sending_CMD==true &&Sending_Frame==true)
+        		
+        	{	KeepAlive_Index=0;
+        		read();
+				
+                final int charaProp = characteristic.getProperties();
+                
+                //如果该char可写
+                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                    // If there is an active notification on a characteristic, clear
+                    // it first so it doesn't update the data field on the user interface.
+                    if (mNotifyCharacteristic != null) {
+                        mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
+                        mNotifyCharacteristic = null;
+                    }
+
+                        //characteristic.setValue(StartCmd);
+                        characteristic.setValue(mArrayList_CANData_MultiFrame.get(SendingCmd_Index));                      
+                        mBluetoothLeService.writeCharacteristic(characteristic);                       
+                        
+                        Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
+             
+                }
+                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                    mNotifyCharacteristic = characteristic;
+                    mBluetoothLeService.setCharacteristicNotification(characteristic, true);
+                }
+                
+                SendingCmd_Index++;
+        		if(SendingCmd_Index>=SendingCmd_Index_Max)
+        		{
+        			SendingCmd_Index=0;
+        			Sending_CMD=false;
+        			Sending_Frame=false;
+        		}
+        		
+        	}
+        	if(KeepServiceAlive==true)
+        	{
+/*
+        		read();
+				
+                final int charaProp = characteristic.getProperties();
+                
+                //如果该char可写
+                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                    // If there is an active notification on a characteristic, clear
+                    // it first so it doesn't update the data field on the user interface.
+                    if (mNotifyCharacteristic != null) {
+                        mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
+                        mNotifyCharacteristic = null;
+                    }
+
+                        //characteristic.setValue(StartCmd);
+                       // characteristic.setValue(mArrayList_CANData.get(0));                      
+                       // mBluetoothLeService.writeCharacteristic(characteristic);                       
+                        
+                        Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
+             
+                }
+                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                    mNotifyCharacteristic = characteristic;
+                    mBluetoothLeService.setCharacteristicNotification(characteristic, true);
+                }
+                */
+                KeepAlive_Index++;
+        		if(KeepAlive_Index>=40)
+        		{
+        			KeepAlive_Index=0;
+        			characteristic.setValue(mArrayList_CANData.get(0));                      
+                    mBluetoothLeService.writeCharacteristic(characteristic);  
+        		}
+        		
+        	
+        		
+        	}
+        	
+         super.handleMessage(msg);
+        }
+        };
+        
+        drawTask = new TimerTask() {
+        @Override
+        public void run() {
+        Message message = new Message();
+            message.what = 1;
+            Drawhandler.sendMessage(message);
+        }
+        };
+        
+        drawTimer.schedule(drawTask, 1000, 500);
     }
  
  
@@ -870,7 +887,10 @@ ReceiveID_CheckBox3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChang
         if (mBluetoothLeService != null) {
             final boolean result = mBluetoothLeService.connect(mDeviceAddress);
             Log.d(TAG, "Connect request result=" + result);
+			
         }
+
+		//FirewallsPassReq_init=true;
     }
 
     @Override
