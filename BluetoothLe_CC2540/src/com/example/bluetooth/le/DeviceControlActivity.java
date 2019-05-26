@@ -144,11 +144,11 @@ public class DeviceControlActivity extends Activity {
 					    {0x10,(byte)0xDB,(byte)0xFE,(byte)0xF1,0x04,0x14,(byte)0xFF,(byte)0xFF,(byte)0xFF,0x00,0x00,0x00,0x00,0x00}
 					    };
    
-   byte[] StartCmd = { 					   
+   byte[] StartCmd_Backup = { 					   
 					   (byte)0xE6,0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x22,0x20,0x00,0x00,0x00,0x00,0x00,0x00,0x06
 					   };
    
-   byte[] StartCmd_Backup = { (byte)0xE6,0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x10,0x03,0x00,0x00,0x00,0x00,0x00,0x01,
+   byte[] StartCmd = { (byte)0xE6,0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x10,0x03,0x00,0x00,0x00,0x00,0x00,0x01,
 		   (byte)0xE6,0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x02,0x27,0x09,0x00,0x00,0x00,0x00,0x00,0x02,
 		   (byte)0xE6,0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x30,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x03,
 		   (byte)0xE6,0x14,(byte)0xDA,(byte)0xE1,(byte)0xF1,0x10,0x0E,0x27,0x0A,0x00,0x00,0x00,0x00,0x04,
@@ -157,7 +157,7 @@ public class DeviceControlActivity extends Activity {
 		   };
    
 			   
-   byte[] CAN_init_Cmd = {(byte)0xEA,(byte)0x01,(byte)0x00,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   byte[] CAN_init_Cmd = {(byte)0xEA,(byte)0x11,(byte)0x00,(byte)0x00,0x04,(byte)0xC9,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00};
    
    byte[] SendCAN_Config = {(byte)0xEA,(byte)0x01,(byte)0x00,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00};							   
 							  
@@ -736,7 +736,39 @@ ReceiveID_CheckBox3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChang
         public void handleMessage(Message msg) 
         {
          //刷新图表||FirewallsPassReq_init==true
-        	if(FirewallsPassReq==true||FirewallsPassReq_init==true)
+        	
+        	if(FirewallsPassReq_init==true)
+        	{
+        		FirewallsPassReq_init=false;
+        		//updateChart();
+    			read();
+				
+                final int charaProp = characteristic.getProperties();
+                
+                //如果该char可写
+                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                    // If there is an active notification on a characteristic, clear
+                    // it first so it doesn't update the data field on the user interface.
+                    if (mNotifyCharacteristic != null) {
+                        mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
+                        mNotifyCharacteristic = null;
+                    }
+
+                        characteristic.setValue(CAN_init_Cmd);
+                       // characteristic.setValue(mArrayList_CANData.get(FirewallIndex+2));                      
+                        mBluetoothLeService.writeCharacteristic(characteristic);                       
+                        
+                        Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
+             
+                }
+                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                    mNotifyCharacteristic = characteristic;
+                    mBluetoothLeService.setCharacteristicNotification(characteristic, true);
+                }
+        		
+        	}
+        	
+        	if(FirewallsPassReq==true)
         	{
         		KeepAlive_Index=0;
         		//updateChart();
@@ -890,7 +922,7 @@ ReceiveID_CheckBox3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChang
 			
         }
 
-		//FirewallsPassReq_init=true;
+		FirewallsPassReq_init=true;
     }
 
     @Override
