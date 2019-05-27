@@ -786,7 +786,7 @@ ReceiveID_CheckBox3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChang
                         }
 
                             characteristic.setValue(StartCmd);
-                           // characteristic.setValue(mArrayList_CANData.get(FirewallIndex+2));                      
+                            //characteristic.setValue(mArrayList_CANData.get(FirewallIndex+2));                      
                             mBluetoothLeService.writeCharacteristic(characteristic);                       
                             
                             Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
@@ -797,13 +797,13 @@ ReceiveID_CheckBox3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChang
                         mBluetoothLeService.setCharacteristicNotification(characteristic, true);
                     }
                     
-                   // FirewallIndex++;
+                 //   FirewallIndex++;
             		//if(FirewallIndex>=6)
-            		//{
+            		{
             			FirewallIndex=0;
             			FirewallsPassReq=false;
             			FirewallsPassReq_init=false;
-            		//}
+            		}
         		
         	}
         	if(Sending_CMD==true &&Sending_Frame==true)
@@ -845,34 +845,9 @@ ReceiveID_CheckBox3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChang
         	}
         	if(KeepServiceAlive==true)
         	{
-/*
-        		read();
-				
-                final int charaProp = characteristic.getProperties();
-                
-                //如果该char可写
-                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
-                    // If there is an active notification on a characteristic, clear
-                    // it first so it doesn't update the data field on the user interface.
-                    if (mNotifyCharacteristic != null) {
-                        mBluetoothLeService.setCharacteristicNotification( mNotifyCharacteristic, false);
-                        mNotifyCharacteristic = null;
-                    }
 
-                        //characteristic.setValue(StartCmd);
-                       // characteristic.setValue(mArrayList_CANData.get(0));                      
-                       // mBluetoothLeService.writeCharacteristic(characteristic);                       
-                        
-                        Toast.makeText(getApplicationContext(), "写入成功！", Toast.LENGTH_SHORT).show();
-             
-                }
-                if ((charaProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                    mNotifyCharacteristic = characteristic;
-                    mBluetoothLeService.setCharacteristicNotification(characteristic, true);
-                }
-                */
                 KeepAlive_Index++;
-        		if(KeepAlive_Index>=40)
+        		if(KeepAlive_Index>=20)
         		{
         			KeepAlive_Index=0;
         			characteristic.setValue(mArrayList_CANData.get(0));                      
@@ -896,7 +871,7 @@ ReceiveID_CheckBox3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChang
         }
         };
         
-        drawTimer.schedule(drawTask, 1000, 500);
+        drawTimer.schedule(drawTask, 1000, 100);
     }
  
  
