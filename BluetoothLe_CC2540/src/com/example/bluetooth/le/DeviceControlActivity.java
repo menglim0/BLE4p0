@@ -219,7 +219,7 @@ public class DeviceControlActivity extends Activity {
    /* 处理Excel 相关变量*/
    int Column_Excel_Sheet0,Column_Excel_Sheet1,Column_Excel_Sheet2,Column_Excel_Sheet_Receive;
    int Row_Excel_Sheet0,Row_Excel_Sheet1,Row_Excel_Sheet_Receive;
-   List<byte[]> mArrayList_CANData,mArrayList_Receive_Var,mArrayList_CANData_MultiFrame;
+   List<byte[]> mArrayList_CANData,mArrayList_Receive_Var,mArrayList_CANData_MultiFrame,mArrayList_PassFireWall;
    int[] Receive_ID_Var; 
    List<String> mArrayList_Receive_SignalName;
    
@@ -231,6 +231,9 @@ public class DeviceControlActivity extends Activity {
    
    List<String> mArrayList_Row;
    List<ArrayList<String>>mArrayList_Row_total;
+   
+   ArrayList<?> mArrayList_FireWall_Cmd;
+   byte[] mByte_FireWall_Cmd;
    /*开线程*/
    private Handler Drawhandler;
    private Timer drawTimer = new Timer();
@@ -238,7 +241,7 @@ public class DeviceControlActivity extends Activity {
    boolean FirewallsPassReq,FirewallsPassReq_init;
    boolean KeepServiceAlive;
    int FirewallIndex;
-   int SendingCmd_Index,SendingCmd_Index_Max,KeepAlive_Index;
+   int SendingCmd_Index,SendingCmd_Index_Max,KeepAlive_Index,SendingCmd_FireWall_Max;
     /***********end of Add Spinner*******************/
 
     // 管理服务的生命周期
@@ -458,6 +461,10 @@ public class DeviceControlActivity extends Activity {
         mArrayList_Row_total=new ArrayList<ArrayList<String>>(); 
         mArrayList_CANData = new ArrayList<byte[]>();
         mArrayList_CANData_MultiFrame = new ArrayList<byte[]>();
+
+		/* Record the PassFireWall direction here */
+		mArrayList_PassFireWall= new ArrayList<byte[]>();
+		
         //mArrayList_Column=OsExcel.Getcolumns_list(mArrayList_Sheet1,0,6,11);
         
         mArrayList_Receive_SignalName = new ArrayList<String>();
@@ -468,7 +475,23 @@ public class DeviceControlActivity extends Activity {
         	mArrayList_CANData.add(dataconvert.StrToChar_List(mArrayList_Row));
         	mArrayList_Receive_SignalName.add(mArrayList_Row.get(0));
         }
-        
+
+		/* Record the PassFireWall direction here */
+		for(int i=1;i<Row_Excel_Sheet1-1;i++)
+		{	
+		if(mArrayList_Receive_SignalName.get(i).equals("安全访问"))
+		{
+		
+		mArrayList_PassFireWall.add(mArrayList_CANData.get(i));
+		//Sending_Frame =true;
+		SendingCmd_FireWall_Max++;
+		}
+		}
+		 mArrayList_FireWall_Cmd=(ArrayList<?>) new ArrayList<Object>();
+		 
+		 mByte_FireWall_Cmd = null;
+		 mByte_FireWall_Cmd= OsExcel.ArrayToByte(mArrayList_PassFireWall, SendingCmd_FireWall_Max);
+		
         /*处理接收数据*/
        
         mArrayList_Sheet_Receive=OsExcel.ReadExcel(Excel_path,2); //接收Excel内容
@@ -785,7 +808,7 @@ ReceiveID_CheckBox3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChang
                             mNotifyCharacteristic = null;
                         }
 
-                            characteristic.setValue(StartCmd);
+                            characteristic.setValue(mByte_FireWall_Cmd);
                             //characteristic.setValue(mArrayList_CANData.get(FirewallIndex+2));                      
                             mBluetoothLeService.writeCharacteristic(characteristic);                       
                             
@@ -897,7 +920,7 @@ ReceiveID_CheckBox3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChang
 			
         }
 
-		FirewallsPassReq_init=true;
+		//FirewallsPassReq_init=true;
     }
 
     @Override

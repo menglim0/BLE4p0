@@ -249,6 +249,24 @@ public class OsExcel{
         return rows_list;
     }
     
+    static byte[] ArrayToByte(List list,int Total_number){
+    	List<Byte> rows_list= new ArrayList<Byte>();        	
+    	byte[] GetToByte=new byte[Total_number*14];	
+    	byte[] TEMP;
+		int i,j;
+		
+		for(i=0;i<Total_number;i++)
+		{
+			TEMP =  (byte[]) list.get(i);	
+			for(j=0;j<14;j++)
+			{
+				GetToByte[i*14+j]=TEMP[j];
+			}
+			//rows_list.add(temp_Var);
+		}
+        return GetToByte;
+    }
+    
     
 }
 
