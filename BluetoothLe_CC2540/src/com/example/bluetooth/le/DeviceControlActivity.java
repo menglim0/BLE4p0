@@ -105,6 +105,7 @@ public class DeviceControlActivity extends Activity {
     private EditText edittext_CAN_Config ; // 数据在这里输入
     TextView[] editT_DisplaySignalName;
     TextView[] valuediaplay;
+    TextView[] Display_Unit;
    // private editT_DisplaySignalName[]=new TextView[3];
     //private TextView editT_DisplaySignalName2;
     //private TextView editT_DisplaySignalName3;
@@ -157,7 +158,7 @@ public class DeviceControlActivity extends Activity {
 		   };
    
 			   
-   byte[] CAN_init_Cmd = {(byte)0xEA,(byte)0x11,(byte)0x00,(byte)0x00,0x04,(byte)0xC9,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+   byte[] CAN_init_Cmd = {(byte)0xEA,(byte)0x52,(byte)0x00,(byte)0x00,0x00,(byte)0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00};
    
    byte[] SendCAN_Config = {(byte)0xEA,(byte)0x01,(byte)0x00,(byte)0x00,0x00,0x00,(byte)0x00,(byte)0x00,0x00,0x00,0x00,0x00,0x00,0x00};							   
 							  
@@ -222,14 +223,15 @@ public class DeviceControlActivity extends Activity {
    List<byte[]> mArrayList_CANData,mArrayList_Receive_Var,mArrayList_CANData_MultiFrame,mArrayList_PassFireWall;
    int[] Receive_ID_Var; 
    List<String> mArrayList_Receive_SignalName;
-   
+   int[] mArrayList_CAN_init_Config;
+   String[] mArrayList_CAN_init_ConfigStr;
    CAN_Receive_Var CAN_Receive_Unpack;
    private List<CAN_Receive_Var> Unpack_Array;
    
    
    ArrayList<String> signal_name_Array;
    
-   List<String> mArrayList_Row;
+   List<String> mArrayList_Row,mArrayList_Row_init;
    List<ArrayList<String>>mArrayList_Row_total;
    
    ArrayList<?> mArrayList_FireWall_Cmd;
@@ -350,44 +352,6 @@ public class DeviceControlActivity extends Activity {
             			}
             		}            		
             	}
-/*
-            	if(Unpack_Array.get(0).ID ==firstByte  &&  data_B[1]==(byte)0x81)
-            	{
-	            	
-	                	convertData = dataconvert.DataStramp(data_B,received_StartBit,  received_SigLength);
-	                 	System.out.println("convertData----" + convertData);
-	                 	
-	            		data_CAN =(int) (convertData-received_Offset);
-	            		
-	            		phsValue_FromCAN=(double)data_CAN*received_reslouation;
-	            		//DecimalFormat df=new DecimalFormat(".##");	            		
-	            		//displayValueData1(df.format(phsValue_FromCAN));
-	            		//displayValueData(df.format(phsValue_FromCAN),0,valuediaplay);
-	        
-            	}*/
-            	//Data2Unpack(byte[] data_B,int index,int ID,byte Startbit,byte Length,byte Offset,double resoluation)
-            	/*
-            	double value_CAN=dataconvert.Data2Unpack(data_B,0,Unpack_Array.get(0).ID,Unpack_Array.get(0).StartBit,Unpack_Array.get(0).SigLength,Unpack_Array.get(0).Offset,Unpack_Array.get(0).reslouation);
-            	DecimalFormat df=new DecimalFormat(".##");	            		
-        		//displayValueData1(df.format(phsValue_FromCAN));
-        		displayValueData(df.format(value_CAN),0,valuediaplay);
-        		*/
-        		/*
-            	if(received_ID_2 ==firstByte  &&  data_B[1]==(byte)0x82)
-            	{
-            		data_CAN =data_CAN-received_Offset;
-            		displayValueData2(data_CAN);	
-            		displayData("ID "+ Integer.toHexString(firstByte)+" received");
-            		displayData(signal_Name+ "="+ data_CAN);
-            		
-            		//received_Offset
-            	}            	
-            	else if(data_B[1]==(byte)0x82)
-            	{
-            		displayData(signal_ReceiveID_2+" can't receive in list 2");
-            		displayValueData2("invalid");
-            	}*/
-      
  
             }
         }
@@ -429,6 +393,12 @@ public class DeviceControlActivity extends Activity {
         editT_DisplaySignalName[1] = (TextView) findViewById(R.id.SignalName_02);
         editT_DisplaySignalName[2] = (TextView) findViewById(R.id.SignalName_03); 
         
+        Display_Unit=new TextView[3];
+        
+        Display_Unit[0] = (TextView) findViewById(R.id.Unit1);
+        Display_Unit[1] = (TextView) findViewById(R.id.Unit2);
+        Display_Unit[2] = (TextView) findViewById(R.id.Unit3); 
+        
         valuediaplay =new TextView[3];
         
         valuediaplay[0]= (TextView) findViewById(R.id.Receive_Value_01);
@@ -445,11 +415,75 @@ public class DeviceControlActivity extends Activity {
       //这里的Handler实例将配合下面的Timer实例，完成定时更新图表的功能
         
         
-        
-        
+        displayData("CAN:500K");
+        displayData("CANFD:5M");
         /*处理Excel数据*/
         
         String Excel_path="signal.xls";
+        
+        List<CurCell> mArrayList_Sheet0 = new ArrayList<CurCell>();
+       // mArrayList_CAN_init_Config=new ArrayList<byte[]>();
+        
+        mArrayList_Sheet0=OsExcel.ReadExcel(Excel_path,0);
+        
+        int CAN_Channel_init,CAN_BaudRate_init,CAN_FD_BaudRate_init,CAN_TermianlRes_En_init;    
+        
+        Row_Excel_Sheet0=OsExcel.Getrows();
+        
+        mArrayList_CAN_init_Config=new int[Row_Excel_Sheet0];
+        mArrayList_CAN_init_ConfigStr = new String[Row_Excel_Sheet0];
+        mArrayList_Row_init = new ArrayList<String>();
+        for(int row_i=0;row_i<Row_Excel_Sheet0;row_i++)
+        {
+        	mArrayList_Row_init=OsExcel.Getrows_list(mArrayList_Sheet0,row_i,Row_Excel_Sheet0,2);
+        	mArrayList_CAN_init_ConfigStr[row_i]=mArrayList_Row_init.get(1);
+        	mArrayList_CAN_init_Config[row_i]=dataconvert.DataStr2Integer(mArrayList_Row_init.get(1));
+        }
+        
+        if(mArrayList_CAN_init_ConfigStr[0].equals(String.valueOf(1)))
+        {
+        	mArrayList_CAN_init_Config[0]=1;
+        	
+        }
+        else if(mArrayList_CAN_init_ConfigStr[0].equals(String.valueOf(2)))
+        {
+        	mArrayList_CAN_init_Config[0]=2;      	
+        }
+        
+        if(mArrayList_CAN_init_ConfigStr[1].equals(String.valueOf(500)))
+        {
+        	mArrayList_CAN_init_Config[1]=1;
+        	
+        }
+        else if(mArrayList_CAN_init_ConfigStr[1].equals(String.valueOf(125)))
+        {
+        	mArrayList_CAN_init_Config[1]=2;      	
+        }
+        
+        if(mArrayList_CAN_init_ConfigStr[2].equals(String.valueOf(5000)))
+        {
+        	mArrayList_CAN_init_Config[2]=1;
+        	
+        }
+        else if(mArrayList_CAN_init_ConfigStr[2].equals(String.valueOf(2000)))
+        {
+        	mArrayList_CAN_init_Config[2]=2;
+        	
+        }
+        
+        if(mArrayList_CAN_init_ConfigStr[3].equals(String.valueOf(1)))
+        {
+        	mArrayList_CAN_init_Config[3]=1;
+        	
+        }
+        else
+        {
+        	mArrayList_CAN_init_Config[3]=0;      	
+        }
+        
+        CAN_init_Cmd[1]=(byte)( ((byte)mArrayList_CAN_init_Config[1]<<6)+((byte)mArrayList_CAN_init_Config[2]<<4)+((byte)mArrayList_CAN_init_Config[0]<<1)+((byte)mArrayList_CAN_init_Config[3]));
+        
+        
         List<CurCell> mArrayList_Sheet1 = new ArrayList<CurCell>();
         List<CurCell> mArrayList_Sheet_Receive = new ArrayList<CurCell>();
         
@@ -494,7 +528,7 @@ public class DeviceControlActivity extends Activity {
 		
         /*处理接收数据*/
        
-        mArrayList_Sheet_Receive=OsExcel.ReadExcel(Excel_path,2); //接收Excel内容
+        mArrayList_Sheet_Receive=OsExcel.ReadExcel(Excel_path,2); //接收Excel内容,第三页接收信息
         Column_Excel_Sheet_Receive=OsExcel.Getcolumns();   //获取列数   
         List<String> mArrayList_Receive_Column = new ArrayList<String>();
         List<String> mArrayList_Receive_Row = new ArrayList<String>();
@@ -512,7 +546,7 @@ public class DeviceControlActivity extends Activity {
         for(int row_i=1;row_i<Row_Excel_Sheet_Receive;row_i++)
         {
         	CAN_Receive_Unpack = new CAN_Receive_Var();
-        	mArrayList_Receive_Row=OsExcel.Getrows_list(mArrayList_Sheet1,row_i,2,6);
+        	mArrayList_Receive_Row=OsExcel.Getrows_list(mArrayList_Sheet1,row_i,2,7);
         	ID_Hex= dataconvert.DataStr2Integer(mArrayList_Receive_Row.get(1).substring(2));
         	Receive_ID_Var[row_i-1]=ID_Hex;
         	
@@ -524,12 +558,30 @@ public class DeviceControlActivity extends Activity {
         	Unpack_Array.add(CAN_Receive_Unpack);
         	//String SignalName=mArrayList_Receive_Row.get(0);
         	editT_DisplaySignalName[row_i-1].setText(mArrayList_Receive_Row.get(0));
+        	Display_Unit[row_i-1].setText(mArrayList_Receive_Row.get(6));
         	//mArrayList_Receive_Var.add(dataconvert.StrToChar_List(mArrayList_Row));        	
         }
         
+        int ID_Temp;
+        ID_Temp=Unpack_Array.get(0).ID;
+        CAN_init_Cmd[2]=(byte) (ID_Temp>>24);
+        CAN_init_Cmd[3]=(byte) ((ID_Temp>>16)&0xFF);
+        CAN_init_Cmd[4]=(byte) ((ID_Temp>>8)&0xFF);
+        CAN_init_Cmd[5]=(byte) ((ID_Temp)&0xFF);
+        ID_Temp=Unpack_Array.get(1).ID;
+        CAN_init_Cmd[6]=(byte) (ID_Temp>>24);
+        CAN_init_Cmd[7]=(byte) ((ID_Temp>>16)&0xFF);
+        CAN_init_Cmd[8]=(byte) ((ID_Temp>>8)&0xFF);
+        CAN_init_Cmd[9]=(byte) ((ID_Temp)&0xFF);
+        ID_Temp=Unpack_Array.get(2).ID;
+        CAN_init_Cmd[10]=(byte) (ID_Temp>>24);
+        CAN_init_Cmd[11]=(byte) ((ID_Temp>>16)&0xFF);
+        CAN_init_Cmd[12]=(byte) ((ID_Temp>>8)&0xFF);
+        CAN_init_Cmd[13]=(byte) ((ID_Temp)&0xFF);
         
-        ReceiveID1=dataconvert.DataStr2Integer(mArrayList_Receive_Row.get(1).substring(2));
         
+        ReceiveID1 = dataconvert.DataStr2Integer(mArrayList_Receive_Row.get(1).substring(2));
+
         received_ID= ReceiveID1; // convert the text to integer
         received_StartBit= dataconvert.DataStr2Decmial(mArrayList_Receive_Row.get(2));
         received_SigLength= dataconvert.DataStr2Decmial(mArrayList_Receive_Row.get(3));
@@ -920,7 +972,7 @@ ReceiveID_CheckBox3.setOnCheckedChangeListener(new CompoundButton.OnCheckedChang
 			
         }
 
-		//FirewallsPassReq_init=true;
+		FirewallsPassReq_init=true;
     }
 
     @Override

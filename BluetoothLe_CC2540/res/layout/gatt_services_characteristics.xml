@@ -32,7 +32,7 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">               
+                android:layout_height="wrap_content" >
 
                 <LinearLayout
                     android:layout_width="434dp"
@@ -98,10 +98,10 @@
 
                     <Button
                         android:id="@+id/Start_button"
-                        android:layout_width="422dp"
+                        android:layout_width="383dp"
                         android:layout_height="105dp"
+                        android:layout_marginLeft="50dp"
                         android:text="UnLock FIREWALL" />
-
                 </LinearLayout>
             </LinearLayout>
 
@@ -150,6 +150,7 @@
                         android:id="@+id/spinner1"
                         android:layout_width="260dp"
                         android:layout_height="44dp"
+                        android:layout_marginTop="20dp"
                         android:background="@drawable/spinner_style" />
                 </LinearLayout>
             </LinearLayout>
@@ -157,54 +158,68 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="151dp"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="50dp"
+                android:layout_weight="0.19"
                 android:orientation="vertical" >
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="40dp" >
+                    android:layout_height="40dp"
+                    android:layout_marginTop="10dp" >
 
                     <CheckBox
                         android:id="@+id/Receive_CheckBox01"
                         android:layout_width="wrap_content"
                         android:layout_height="fill_parent"
                         android:layout_marginRight="10dp"
-                        android:text="Select" />
+                        android:text="Select"
+                        android:visibility="invisible" />
 
                     <TextView
                         android:id="@+id/SignalName_01"
-                        android:layout_width="298dp"
+                        android:layout_width="300dp"
                         android:layout_height="fill_parent"
-                        android:gravity="center"
+                        android:gravity="center|left"
                         android:text="SignalName"
                         android:textSize="20sp" />
 
                     <TextView
                         android:id="@+id/Receive_Value_01"
-                        android:layout_width="match_parent"
+                        android:layout_width="360dp"
                         android:layout_height="fill_parent"
+                        android:background="@drawable/edit_style"
                         android:gravity="center"
                         android:text="Value"
+                        android:textSize="20sp" />
+
+                    <TextView
+                        android:id="@+id/Unit1"
+                        android:layout_width="match_parent"
+                        android:layout_height="fill_parent"
+                        android:layout_marginLeft="5dp"
+                        android:gravity="center|left"
+                        android:text="Unit"
                         android:textSize="20sp" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="40dp" >
+                    android:layout_height="40dp"
+                    android:layout_marginTop="20dp" >
 
                     <CheckBox
                         android:id="@+id/Receive_CheckBox02"
                         android:layout_width="wrap_content"
                         android:layout_height="fill_parent"
                         android:layout_marginRight="10dp"
-                        android:text="Select" />
+                        android:text="Select"
+                        android:visibility="invisible" />
 
                     <TextView
                         android:id="@+id/SignalName_02"
-                        android:layout_width="120dp"
+                        android:layout_width="300dp"
                         android:layout_height="fill_parent"
-                        android:layout_weight="1"
-                        android:gravity="center"
+                        android:gravity="center|left"
                         android:text="SignalName"
                         android:textSize="20sp" />
 
@@ -212,43 +227,64 @@
                         android:id="@+id/Receive_Value_02"
                         android:layout_width="360dp"
                         android:layout_height="fill_parent"
-                        android:layout_weight="0.72"
                         android:background="@drawable/edit_style"
                         android:gravity="center"
                         android:text="Value"
                         android:textSize="20sp" />
 
+                    <TextView
+                        android:id="@+id/Unit2"
+                        android:layout_width="114dp"
+                        android:layout_height="fill_parent"
+                        android:layout_marginLeft="5dp"
+                        android:layout_weight="0.06"
+                        android:gravity="center|left"
+                        android:text="Unit"
+                        android:textSize="20sp" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="40dp" >
+                    android:layout_height="40dp"
+                    android:layout_marginTop="20dp" >
 
                     <CheckBox
                         android:id="@+id/Receive_CheckBox03"
                         android:layout_width="wrap_content"
                         android:layout_height="fill_parent"
                         android:layout_marginRight="10dp"
-                        android:text="Select" />
+                        android:text="Select"
+                        android:visibility="invisible" />
 
                     <TextView
                         android:id="@+id/SignalName_03"
-                        android:layout_width="298dp"
+                        android:layout_width="300dp"
                         android:layout_height="fill_parent"
                         android:layout_weight="0.43"
-                        android:gravity="center"
+                        android:gravity="center|left"
                         android:text="SignalName"
                         android:textSize="20sp" />
 
                     <TextView
                         android:id="@+id/Receive_Value_03"
-                        android:layout_width="486dp"
+                        android:layout_width="360dp"
                         android:layout_height="fill_parent"
+                        android:background="@drawable/edit_style"
                         android:gravity="center"
                         android:text="Value"
                         android:textSize="20sp" />
-                </LinearLayout>
 
+                    <TextView
+                        android:id="@+id/Unit3"
+                        android:layout_width="114dp"
+                        android:layout_height="fill_parent"
+                        android:layout_marginLeft="5dp"
+                        android:layout_weight="8.64"
+                        android:gravity="center|left"
+                        android:text="Unit"
+                        android:textSize="20sp" />
+
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
 
